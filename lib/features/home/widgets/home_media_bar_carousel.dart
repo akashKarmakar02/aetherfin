@@ -87,6 +87,7 @@ class _HomeMediaBarCarouselState extends State<HomeMediaBarCarousel> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // SizedBox(height: 250, width: 500),
             AspectRatio(
               aspectRatio: isMobileCupertino
                   ? 0.62
@@ -231,6 +232,9 @@ class _HeroCard extends StatelessWidget {
                     ? theme.textTheme.headlineSmall
                     : theme.textTheme.headlineMedium)
                 ?.copyWith(color: Colors.white, fontWeight: FontWeight.w700);
+        final heroBackgroundColor = currentAppPlatform == AppPlatform.linux
+            ? theme.colorScheme.surface
+            : const Color(0xFF101115);
         final heroImageUrl = isMobileCupertino
             ? switch (mobileArtwork) {
                 HomeMediaBarMobileArtwork.primary =>
@@ -251,23 +255,25 @@ class _HeroCard extends StatelessWidget {
                 ? null
                 : () => pushSeriesDetailsForItem(context, item),
             child: Container(
-              margin: EdgeInsets.symmetric(horizontal: isMobileCupertino ? 0 : 4),
+              margin: EdgeInsets.symmetric(
+                horizontal: isMobileCupertino ? 0 : 4,
+              ),
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(isMobileCupertino ? 0 : 28),
-                color: const Color(0xFF101115),
-                border: isMobileCupertino
-                    ? null
-                    : Border.all(color: Colors.white.withValues(alpha: 0.10)),
-                boxShadow: isMobileCupertino
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.40),
-                          blurRadius: 40,
-                          offset: const Offset(0, 22),
-                        ),
-                      ],
+                color: heroBackgroundColor,
+                // border: isMobileCupertino
+                //     ? null
+                //     : Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                // boxShadow: isMobileCupertino
+                //     ? null
+                //     : [
+                //         BoxShadow(
+                //           color: Colors.black.withValues(alpha: 0.40),
+                //           blurRadius: 40,
+                //           offset: const Offset(0, 22),
+                //         ),
+                //       ],
               ),
               child: Stack(
                 fit: StackFit.expand,
@@ -331,8 +337,10 @@ class _HeroCard extends StatelessWidget {
                             entry.logoUrl!,
                             height: logoHeight,
                             alignment: Alignment.centerLeft,
-                            errorBuilder: (_, _, _) =>
-                                Text(item.name ?? 'Untitled', style: titleStyle),
+                            errorBuilder: (_, _, _) => Text(
+                              item.name ?? 'Untitled',
+                              style: titleStyle,
+                            ),
                           )
                         else
                           Text(item.name ?? 'Untitled', style: titleStyle),
@@ -340,7 +348,9 @@ class _HeroCard extends StatelessWidget {
                           SizedBox(height: compact ? 6 : 10),
                           Text(
                             metadata,
-                            textAlign: isMobileCupertino ? TextAlign.center : null,
+                            textAlign: isMobileCupertino
+                                ? TextAlign.center
+                                : null,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.72),
                               fontSize: isMobileCupertino
@@ -351,7 +361,8 @@ class _HeroCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (!ultraCompact && (item.overview ?? '').isNotEmpty) ...[
+                        if (!ultraCompact &&
+                            (item.overview ?? '').isNotEmpty) ...[
                           const SizedBox(height: 8),
                           ConstrainedBox(
                             constraints: BoxConstraints(
@@ -394,7 +405,9 @@ class _HeroCard extends StatelessWidget {
                             runSpacing: isMobileCupertino ? 6 : 8,
                             children: [
                               for (final genre
-                                  in (isMobileCupertino ? genres.take(1) : genres))
+                                  in (isMobileCupertino
+                                      ? genres.take(1)
+                                      : genres))
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
@@ -406,15 +419,24 @@ class _HeroCard extends StatelessWidget {
                                   ),
                                   child: Text(
                                     genre,
-                                    style: theme.textTheme.labelMedium?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.90),
-                                    ),
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.90,
+                                          ),
+                                        ),
                                   ),
                                 ),
                             ],
                           ),
                         ],
-                        SizedBox(height: isMobileCupertino ? 12 : compact ? 12 : 18),
+                        SizedBox(
+                          height: isMobileCupertino
+                              ? 12
+                              : compact
+                              ? 12
+                              : 18,
+                        ),
                         Wrap(
                           spacing: 10,
                           runSpacing: 10,
@@ -439,10 +461,8 @@ class _HeroCard extends StatelessWidget {
                             ),
                             if (!isMobileCupertino && navigationTarget != null)
                               OutlinedButton.icon(
-                                onPressed: () => pushSeriesDetailsForItem(
-                                  context,
-                                  item,
-                                ),
+                                onPressed: () =>
+                                    pushSeriesDetailsForItem(context, item),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   side: BorderSide(
@@ -457,7 +477,9 @@ class _HeroCard extends StatelessWidget {
                                   CupertinoIcons.info_circle_fill,
                                   size: compact ? 14 : 16,
                                 ),
-                                label: Text(item.isEpisode ? 'Details' : 'View Show'),
+                                label: Text(
+                                  item.isEpisode ? 'Details' : 'View Show',
+                                ),
                               ),
                           ],
                         ),

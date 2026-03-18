@@ -47,16 +47,21 @@ class _ConnectScreenState extends State<ConnectScreen> {
     }
 
     final isBusy = session.phase == AppSessionPhase.checkingServer;
+    final isLinux = currentAppPlatform == AppPlatform.linux;
     final isCupertino = currentAppPlatform == AppPlatform.cupertino;
 
     return AuthSceneFrame(
-      eyebrow: 'Connect',
-      title: isCupertino ? 'Connect to your server' : 'Add your Jellyfin server',
+      eyebrow: isLinux ? '' : 'Connect',
+      title: isCupertino || isLinux
+          ? 'Connect to your server'
+          : 'Add your Jellyfin server',
       description: isCupertino
           ? 'Enter your Jellyfin server URL to get started.'
+          : isLinux
+          ? 'Enter the address of your Jellyfin server to get started. Aetherfin will verify the connection before continuing.'
           : 'Start with the server URL. Aetherfin will ping it first, then move to credentials once the server responds successfully.',
       errorMessage: session.errorMessage,
-      secondaryChildren: isCupertino
+      secondaryChildren: isCupertino || isLinux
           ? const []
           : const [
               SupportPanel(
@@ -71,17 +76,82 @@ class _ConnectScreenState extends State<ConnectScreen> {
               ),
             ],
       child: switch (currentAppPlatform) {
+        AppPlatform.linux => _LinuxConnectForm(
+          controller: _serverController,
+          isBusy: isBusy,
+          onSubmit: () => _submit(session),
+        ),
         AppPlatform.cupertino => _CupertinoConnectForm(
-            controller: _serverController,
-            isBusy: isBusy,
-            onSubmit: () => _submit(session),
-          ),
+          controller: _serverController,
+          isBusy: isBusy,
+          onSubmit: () => _submit(session),
+        ),
         _ => _MaterialConnectForm(
-            controller: _serverController,
-            isBusy: isBusy,
-            onSubmit: () => _submit(session),
-          ),
+          controller: _serverController,
+          isBusy: isBusy,
+          onSubmit: () => _submit(session),
+        ),
       },
+    );
+  }
+}
+
+class _LinuxConnectForm extends StatelessWidget {
+  const _LinuxConnectForm({
+    required this.controller,
+    required this.isBusy,
+    required this.onSubmit,
+  });
+
+  final TextEditingController controller;
+  final bool isBusy;
+  final Future<void> Function() onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Server address',
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(
+            hintText: 'https://jellyfin.example.com',
+          ),
+          onSubmitted: (_) {
+            if (!isBusy) {
+              onSubmit();
+            }
+          },
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Supports local and remote Jellyfin servers.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton(
+            onPressed: isBusy ? null : onSubmit,
+            child: Text(isBusy ? 'Connecting…' : 'Connect'),
+          ),
+        ),
+      ],
     );
   }
 }

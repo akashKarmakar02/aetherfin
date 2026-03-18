@@ -339,7 +339,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                           if (data.hasNextUp) ...[
                             _SectionHeader(title: 'Next Up'),
                             const SizedBox(height: 14),
-                            _MediaRail(
+                            _EpisodeMediaRail(
                               entries: data.nextUpEntries,
                               isCupertinoMobile: isCupertinoMobile,
                               onTap: (entry) =>
@@ -591,7 +591,7 @@ class _SeriesDetailsLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF090B0D),
+      // color: const Color(0xFF090B0D),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -853,8 +853,9 @@ class _EpisodesRail extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           final entry = entries[index];
-          return _EpisodeCard(
+          return _EpisodeMediaCard(
             entry: entry,
+            runtimeLabel: entry.runtimeLabel,
             isCupertinoMobile: isCupertinoMobile,
             onTap: () => onSelected(entry),
             onPlay: () => onPlay(entry),
@@ -865,8 +866,8 @@ class _EpisodesRail extends StatelessWidget {
   }
 }
 
-class _MediaRail extends StatelessWidget {
-  const _MediaRail({
+class _EpisodeMediaRail extends StatelessWidget {
+  const _EpisodeMediaRail({
     required this.entries,
     required this.isCupertinoMobile,
     this.onTap,
@@ -881,6 +882,35 @@ class _MediaRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+      height: isCupertinoMobile ? 214 : 238,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: entries.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 16),
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          return _EpisodeMediaCard(
+            entry: entry,
+            runtimeLabel: null,
+            isCupertinoMobile: isCupertinoMobile,
+            onTap: onTap == null ? null : () => onTap!(entry),
+            onPlay: onPlay == null ? null : () => onPlay!(entry),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MediaRail extends StatelessWidget {
+  const _MediaRail({required this.entries, required this.isCupertinoMobile});
+
+  final List<SeriesDetailsMediaEntry> entries;
+  final bool isCupertinoMobile;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
       height: isCupertinoMobile ? 188 : 206,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
@@ -891,8 +921,6 @@ class _MediaRail extends StatelessWidget {
           return _LandscapeCard(
             entry: entry,
             isCupertinoMobile: isCupertinoMobile,
-            onTap: onTap == null ? null : () => onTap!(entry),
-            onPlay: onPlay == null ? null : () => onPlay!(entry),
           );
         },
       ),
@@ -941,197 +969,194 @@ class _CastRail extends StatelessWidget {
   }
 }
 
-class _EpisodeCard extends StatelessWidget {
-  const _EpisodeCard({
+class _EpisodeMediaCard extends StatelessWidget {
+  const _EpisodeMediaCard({
     required this.entry,
+    required this.runtimeLabel,
     required this.isCupertinoMobile,
     required this.onTap,
     required this.onPlay,
   });
 
-  final SeriesDetailsEpisodeEntry entry;
+  final SeriesDetailsMediaEntry entry;
+  final String? runtimeLabel;
   final bool isCupertinoMobile;
-  final VoidCallback onTap;
-  final VoidCallback onPlay;
+  final VoidCallback? onTap;
+  final VoidCallback? onPlay;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final metaLine = [
       entry.subtitle,
-      entry.runtimeLabel,
+      runtimeLabel,
     ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          width: isCupertinoMobile ? 286 : 332,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1B1E),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-              width: 1,
+    final body = AnimatedContainer(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      width: isCupertinoMobile ? 286 : 332,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1B1E),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.12),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (entry.imageUrl != null)
+            Image.network(
+              entry.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.10),
+                  Colors.black.withValues(alpha: 0.34),
+                  const Color(0xFF2C3729).withValues(alpha: 0.94),
+                ],
+                stops: const [0, 0.48, 1],
+              ),
             ),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (entry.imageUrl != null)
-                Image.network(
-                  entry.imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.10),
-                      Colors.black.withValues(alpha: 0.34),
-                      const Color(0xFF2C3729).withValues(alpha: 0.94),
-                    ],
-                    stops: const [0, 0.48, 1],
-                  ),
-                ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: isCupertinoMobile ? 104 : 129,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(22),
+                top: Radius.circular(16),
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: isCupertinoMobile ? 104 : 118,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(22),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(22),
-                        ),
-                        color: const Color(
-                          0xFF6C756A,
-                        ).withValues(alpha: 0.16),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.02),
-                            Colors.black.withValues(alpha: 0.12),
-                            Colors.black.withValues(alpha: 0.22),
-                          ],
-                          stops: const [0, 0.36, 1],
-                        ),
-                      ),
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 12,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      entry.eyebrow ?? 'Episode',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.74),
-                        letterSpacing: 0.7,
-                        fontWeight: FontWeight.w500,
-                        fontSize: isCupertinoMobile ? 10.5 : 11,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      entry.title ?? 'Untitled',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          (isCupertinoMobile
-                                  ? theme.textTheme.titleMedium
-                                  : theme.textTheme.titleLarge)
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: isCupertinoMobile ? 17 : 18,
-                                height: 1.08,
-                                letterSpacing: -0.15,
-                              ),
-                    ),
-                    if ((entry.description ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        entry.description!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.84),
-                          fontSize: isCupertinoMobile ? 12.5 : 13.5,
-                          height: 1.22,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            metaLine,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.76),
-                              fontSize: isCupertinoMobile ? 11.5 : 12,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        _MiniPlayButton(onPressed: onPlay),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.more_horiz,
-                          size: 18,
-                          color: Colors.white.withValues(alpha: 0.78),
-                        ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(22)),
+                    color: const Color(0xFF6C756A).withValues(alpha: 0.16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.02),
+                        Colors.black.withValues(alpha: 0.12),
+                        Colors.black.withValues(alpha: 0.22),
                       ],
+                      stops: const [0, 0.36, 1],
+                    ),
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 14,
+            right: 14,
+            bottom: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  entry.eyebrow ?? 'Episode',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.74),
+                    letterSpacing: 0.7,
+                    fontWeight: FontWeight.w500,
+                    fontSize: isCupertinoMobile ? 10.5 : 11,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  entry.title ?? 'Untitled',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      (isCupertinoMobile
+                              ? theme.textTheme.titleMedium
+                              : theme.textTheme.titleLarge)
+                          ?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: isCupertinoMobile ? 13 : 15,
+                            height: 1.08,
+                            letterSpacing: -0.15,
+                          ),
+                ),
+                if ((entry.description ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.84),
+                      fontSize: isCupertinoMobile ? 12.5 : 13.5,
+                      height: 1.22,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        metaLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.76),
+                          fontSize: isCupertinoMobile ? 11.5 : 12,
+                        ),
+                      ),
+                    ),
+                    if (onPlay != null) ...[
+                      const SizedBox(width: 6),
+                      _MiniPlayButton(onPressed: onPlay!),
+                    ],
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.more_horiz,
+                      size: 18,
+                      color: Colors.white.withValues(alpha: 0.78),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
+    );
+
+    if (onTap == null) {
+      return body;
+    }
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(onTap: onTap, child: body),
     );
   }
 }
 
 class _LandscapeCard extends StatelessWidget {
-  const _LandscapeCard({
-    required this.entry,
-    required this.isCupertinoMobile,
-    this.onTap,
-    this.onPlay,
-  });
+  const _LandscapeCard({required this.entry, required this.isCupertinoMobile});
 
   final SeriesDetailsMediaEntry entry;
   final bool isCupertinoMobile;
-  final VoidCallback? onTap;
-  final VoidCallback? onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -1228,28 +1253,13 @@ class _LandscapeCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (onPlay != null) ...[
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _MiniPlayButton(onPressed: onPlay!),
-                  ),
-                ],
               ],
             ),
           ),
         ],
       ),
     );
-
-    if (onTap == null) {
-      return body;
-    }
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(onTap: onTap, child: body),
-    );
+    return body;
   }
 }
 
@@ -1268,7 +1278,10 @@ class _RelatedPosterCard extends StatelessWidget {
           if (itemId == null) {
             return;
           }
-          context.goNamed(AppRoutes.seriesName, pathParameters: {'id': itemId});
+          context.pushNamed(
+            AppRoutes.seriesName,
+            pathParameters: {'id': itemId},
+          );
         },
         child: SizedBox(
           width: 154,

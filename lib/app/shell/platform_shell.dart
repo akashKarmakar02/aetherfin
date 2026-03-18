@@ -84,18 +84,35 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
         border: BorderSide.none,
         leading: widget.showBackButton
             ? Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Semantics(
-                  label: 'Back',
-                  button: true,
-                  child: YaruIconButton(
-                    onPressed: widget.onBackPressed,
-                    icon: const Icon(YaruIcons.go_previous),
+                padding: const EdgeInsets.only(left: 0),
+                child: Center(
+                  child: Semantics(
+                    label: 'Back',
+                    button: true,
+                    child: SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: Material(
+                        // color: scheme.onSurface.withValues(alpha: 0.06),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: widget.onBackPressed,
+                          child: Icon(
+                            YaruIcons.go_previous,
+                            size: 18,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               )
             : null,
-        title: const Text('Aetherfin'),
+        title: const Text('FlutterFin'),
       ),
       body: ColoredBox(color: scheme.surface, child: widget.child),
     );

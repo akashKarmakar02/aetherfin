@@ -74,13 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                              HomeMediaBarCarousel(
-                                entries: viewData?.entries ?? const [],
-                                source:
-                                    viewData?.source ??
-                                    JellyfinMediaBarSource.none,
-                                mobileArtwork: _mobileCarouselArtwork,
-                              ),
+                          HomeMediaBarCarousel(
+                            entries: viewData?.entries ?? const [],
+                            source:
+                                viewData?.source ?? JellyfinMediaBarSource.none,
+                            mobileArtwork: _mobileCarouselArtwork,
+                          ),
+                          // SizedBox(height: 250, width: 500),
                           if ((viewData?.continueWatchingEntries ?? const [])
                               .isNotEmpty) ...[
                             SizedBox(height: isMobileCupertino ? 20 : 28),

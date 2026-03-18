@@ -34,97 +34,105 @@ class AetherfinApp extends StatelessWidget {
       notifier: sessionController,
       child: switch (currentAppPlatform) {
         AppPlatform.linux => YaruTheme(
-            builder: (context, yaru, child) {
-              final lightTheme =
-                  LinuxAppTheme.resolve(yaru.theme ?? ThemeData.light());
-              final darkTheme =
-                  LinuxAppTheme.resolve(yaru.darkTheme ?? ThemeData.dark());
-              return MaterialApp.router(
-                title: 'Aetherfin',
-                debugShowCheckedModeBanner: false,
-                theme: lightTheme,
-                darkTheme: darkTheme,
-                routerConfig: router,
-                builder: (context, routeChild) {
-                  return ValueListenableBuilder<RouteInformation>(
-                    valueListenable: router.routeInformationProvider,
-                    builder: (context, routeInformation, _) {
-                      final currentPath = routeInformation.uri.path;
-                      if (_isFullscreenPath(currentPath)) {
-                        return routeChild ?? const SizedBox.shrink();
-                      }
-                      return LinuxWindowShell(
-                        enableTray: enableLinuxTray,
-                        showBackButton: currentPath.startsWith('/series/'),
-                        onBackPressed: () => router.goNamed(AppRoutes.homeName),
-                        child: routeChild ?? const SizedBox.shrink(),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
+          builder: (context, yaru, child) {
+            final lightTheme = LinuxAppTheme.resolve(
+              yaru.theme ?? ThemeData.light(),
+            );
+            final darkTheme = LinuxAppTheme.resolve(
+              yaru.darkTheme ?? ThemeData.dark(),
+            );
+            return MaterialApp.router(
+              title: 'Aetherfin',
+              debugShowCheckedModeBanner: false,
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              routerConfig: router,
+              builder: (context, routeChild) {
+                return ValueListenableBuilder<RouteInformation>(
+                  valueListenable: router.routeInformationProvider,
+                  builder: (context, routeInformation, _) {
+                    final currentPath = routeInformation.uri.path;
+                    if (_isFullscreenPath(currentPath)) {
+                      return routeChild ?? const SizedBox.shrink();
+                    }
+                    return LinuxWindowShell(
+                      enableTray: enableLinuxTray,
+                      showBackButton: currentPath.startsWith('/series/'),
+                      onBackPressed: () {
+                        if (router.canPop()) {
+                          router.pop();
+                        } else {
+                          router.goNamed(AppRoutes.homeName);
+                        }
+                      },
+                      child: routeChild ?? const SizedBox.shrink(),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
         AppPlatform.cupertino => CupertinoApp.router(
-            title: 'Aetherfin',
-            debugShowCheckedModeBanner: false,
-            theme: CupertinoAppThemes.theme,
-            routerConfig: router,
-            builder: (context, routeChild) {
-              return ValueListenableBuilder<RouteInformation>(
-                valueListenable: router.routeInformationProvider,
-                builder: (context, routeInformation, _) {
-                  final currentPath = routeInformation.uri.path;
-                  if (_isFullscreenPath(currentPath)) {
-                    return routeChild ?? const SizedBox.shrink();
-                  }
-                  return CupertinoRootShell(
-                    child: routeChild ?? const SizedBox.shrink(),
-                  );
-                },
-              );
-            },
-          ),
+          title: 'Aetherfin',
+          debugShowCheckedModeBanner: false,
+          theme: CupertinoAppThemes.theme,
+          routerConfig: router,
+          builder: (context, routeChild) {
+            return ValueListenableBuilder<RouteInformation>(
+              valueListenable: router.routeInformationProvider,
+              builder: (context, routeInformation, _) {
+                final currentPath = routeInformation.uri.path;
+                if (_isFullscreenPath(currentPath)) {
+                  return routeChild ?? const SizedBox.shrink();
+                }
+                return CupertinoRootShell(
+                  child: routeChild ?? const SizedBox.shrink(),
+                );
+              },
+            );
+          },
+        ),
         AppPlatform.windows => MaterialApp.router(
-            title: 'Aetherfin',
-            debugShowCheckedModeBanner: false,
-            theme: WindowsAppTheme.build(),
-            routerConfig: router,
-            builder: (context, routeChild) {
-              return ValueListenableBuilder<RouteInformation>(
-                valueListenable: router.routeInformationProvider,
-                builder: (context, routeInformation, _) {
-                  final currentPath = routeInformation.uri.path;
-                  if (_isFullscreenPath(currentPath)) {
-                    return routeChild ?? const SizedBox.shrink();
-                  }
-                  return DesktopMaterialShell(
-                    child: routeChild ?? const SizedBox.shrink(),
-                  );
-                },
-              );
-            },
-          ),
+          title: 'Aetherfin',
+          debugShowCheckedModeBanner: false,
+          theme: WindowsAppTheme.build(),
+          routerConfig: router,
+          builder: (context, routeChild) {
+            return ValueListenableBuilder<RouteInformation>(
+              valueListenable: router.routeInformationProvider,
+              builder: (context, routeInformation, _) {
+                final currentPath = routeInformation.uri.path;
+                if (_isFullscreenPath(currentPath)) {
+                  return routeChild ?? const SizedBox.shrink();
+                }
+                return DesktopMaterialShell(
+                  child: routeChild ?? const SizedBox.shrink(),
+                );
+              },
+            );
+          },
+        ),
         AppPlatform.material => MaterialApp.router(
-            title: 'Aetherfin',
-            debugShowCheckedModeBanner: false,
-            theme: WindowsAppTheme.build(),
-            routerConfig: router,
-            builder: (context, routeChild) {
-              return ValueListenableBuilder<RouteInformation>(
-                valueListenable: router.routeInformationProvider,
-                builder: (context, routeInformation, _) {
-                  final currentPath = routeInformation.uri.path;
-                  if (_isFullscreenPath(currentPath)) {
-                    return routeChild ?? const SizedBox.shrink();
-                  }
-                  return DesktopMaterialShell(
-                    child: routeChild ?? const SizedBox.shrink(),
-                  );
-                },
-              );
-            },
-          ),
+          title: 'Aetherfin',
+          debugShowCheckedModeBanner: false,
+          theme: WindowsAppTheme.build(),
+          routerConfig: router,
+          builder: (context, routeChild) {
+            return ValueListenableBuilder<RouteInformation>(
+              valueListenable: router.routeInformationProvider,
+              builder: (context, routeInformation, _) {
+                final currentPath = routeInformation.uri.path;
+                if (_isFullscreenPath(currentPath)) {
+                  return routeChild ?? const SizedBox.shrink();
+                }
+                return DesktopMaterialShell(
+                  child: routeChild ?? const SizedBox.shrink(),
+                );
+              },
+            );
+          },
+        ),
       },
     );
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yaru_window/yaru_window.dart';
 
 import '../../../app/session/app_session_scope.dart';
@@ -10,10 +11,7 @@ import '../data/player_loader.dart';
 import '../player_controller.dart';
 
 class PlayerScreen extends StatefulWidget {
-  const PlayerScreen({
-    super.key,
-    required this.itemId,
-  });
+  const PlayerScreen({super.key, required this.itemId});
 
   final String itemId;
 
@@ -33,12 +31,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   void initState() {
     super.initState();
     _setFullscreenSystemUi(true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _isMobileOs || _isVideoFullscreen) {
-        return;
-      }
-      unawaited(_enterFullscreen());
-    });
   }
 
   @override
@@ -122,29 +114,29 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       behavior: HitTestBehavior.opaque,
                       onTap: controller.toggleControls,
                       child: MouseRegion(
-                      onEnter: (_) {
-                        _handlePointerActivity(controller);
-                      },
-                      onHover: (event) {
-                        _handlePointerActivity(
-                          controller,
-                          position: event.position,
-                        );
-                      },
-                      onExit: (_) {
-                        _lastPointerPosition = null;
-                      },
-                      child: Listener(
-                        onPointerDown: (event) {
+                        onEnter: (_) {
+                          _handlePointerActivity(controller);
+                        },
+                        onHover: (event) {
                           _handlePointerActivity(
                             controller,
                             position: event.position,
-                            force: true,
                           );
                         },
-                        onPointerSignal: (_) {
-                          _handlePointerActivity(controller, force: true);
+                        onExit: (_) {
+                          _lastPointerPosition = null;
                         },
+                        child: Listener(
+                          onPointerDown: (event) {
+                            _handlePointerActivity(
+                              controller,
+                              position: event.position,
+                              force: true,
+                            );
+                          },
+                          onPointerSignal: (_) {
+                            _handlePointerActivity(controller, force: true);
+                          },
                           child: ColoredBox(
                             color: Colors.black,
                             child: viewData == null
@@ -190,11 +182,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                               ),
                               child: Text(
                                 controller.message!,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.white),
                               ),
                             ),
                           ),
@@ -259,7 +248,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (!mounted) {
       return;
     }
-    await Navigator.of(context).maybePop();
+    GoRouter.of(context).pop();
   }
 
   void _handlePointerActivity(
@@ -378,9 +367,9 @@ class _PlayerControlsOverlay extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   _formatDuration(controller.position),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -402,7 +391,8 @@ class _PlayerControlsOverlay extends StatelessWidget {
                       onChanged: (value) {
                         final nextPosition = Duration(
                           milliseconds:
-                              (controller.duration.inMilliseconds * value).round(),
+                              (controller.duration.inMilliseconds * value)
+                                  .round(),
                         );
                         controller.seek(nextPosition);
                       },
@@ -412,9 +402,9 @@ class _PlayerControlsOverlay extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   _formatDuration(controller.duration),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white),
                 ),
               ],
             ),
@@ -480,7 +470,8 @@ class _PlayerControlsOverlay extends StatelessWidget {
               ),
               _SettingsOptionTile(
                 label: 'Off',
-                selected: controller.viewData?.selectedSubtitleStreamIndex == -1,
+                selected:
+                    controller.viewData?.selectedSubtitleStreamIndex == -1,
                 onTap: () async {
                   Navigator.of(context).pop();
                   await controller.selectSubtitleStream(-1);
@@ -538,10 +529,7 @@ class _PlayerIconButton extends StatelessWidget {
 }
 
 class _PlayerErrorOverlay extends StatelessWidget {
-  const _PlayerErrorOverlay({
-    required this.onRetry,
-    required this.onClose,
-  });
+  const _PlayerErrorOverlay({required this.onRetry, required this.onClose});
 
   final VoidCallback onRetry;
   final VoidCallback onClose;
@@ -616,10 +604,7 @@ class _SettingsOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      title: Text(
-        label,
-        style: const TextStyle(color: Colors.white),
-      ),
+      title: Text(label, style: const TextStyle(color: Colors.white)),
       trailing: selected
           ? const Icon(Icons.check_rounded, color: Colors.white)
           : null,

@@ -45,7 +45,7 @@ Future<void> pushSeriesDetailsForItem(
   if (target == null) {
     return;
   }
-  context.goNamed(
+  await context.pushNamed(
     AppRoutes.seriesName,
     pathParameters: {'id': target.seriesId},
     queryParameters: target.queryParameters,
