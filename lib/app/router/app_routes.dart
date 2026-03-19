@@ -10,6 +10,7 @@ class AppRoutes {
   static const String connectName = 'connect';
   static const String loginName = 'login';
   static const String homeName = 'home';
+  static const String search = 'search';
   static const String seriesName = 'series';
   static const String playerName = 'player';
 }

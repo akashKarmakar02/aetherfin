@@ -70,6 +70,28 @@ void main() {
                   ),
                 ),
               ],
+              nextUpEntries: [
+                HomeMediaBarEntry(
+                  item: JellyfinBaseItem(
+                    id: 'item-3',
+                    type: 'Episode',
+                    name: 'Chikhai Bardo',
+                    seriesName: 'Severance',
+                    parentIndexNumber: 2,
+                    indexNumber: 9,
+                  ),
+                ),
+              ],
+              recentlyAddedEntries: [
+                HomeMediaBarEntry(
+                  item: JellyfinBaseItem(
+                    id: 'item-4',
+                    type: 'Movie',
+                    name: 'Sinners',
+                    productionYear: 2025,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -81,5 +103,9 @@ void main() {
     expect(find.text('The Studio'), findsOneWidget);
     expect(find.text('Continue Watching'), findsOneWidget);
     expect(find.text('Blue Box'), findsOneWidget);
+    expect(find.text('Next Up'), findsOneWidget);
+    expect(find.text('Chikhai Bardo'), findsOneWidget);
+    expect(find.text('Recently Added'), findsOneWidget);
+    expect(find.text('Sinners'), findsOneWidget);
   });
 }

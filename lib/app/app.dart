@@ -35,12 +35,8 @@ class AetherfinApp extends StatelessWidget {
       child: switch (currentAppPlatform) {
         AppPlatform.linux => YaruTheme(
           builder: (context, yaru, child) {
-            final lightTheme = LinuxAppTheme.resolve(
-              yaru.theme ?? ThemeData.light(),
-            );
-            final darkTheme = LinuxAppTheme.resolve(
-              yaru.darkTheme ?? ThemeData.dark(),
-            );
+            final lightTheme = LinuxAppTheme.resolve(yaru.theme);
+            final darkTheme = LinuxAppTheme.resolve(yaru.darkTheme);
             return MaterialApp.router(
               title: 'Aetherfin',
               debugShowCheckedModeBanner: false,
@@ -55,9 +51,13 @@ class AetherfinApp extends StatelessWidget {
                     if (_isFullscreenPath(currentPath)) {
                       return routeChild ?? const SizedBox.shrink();
                     }
+                    print(currentPath);
                     return LinuxWindowShell(
                       enableTray: enableLinuxTray,
                       showBackButton: currentPath.startsWith('/series/'),
+                      isHomeSelected: currentPath == AppRoutes.homePath,
+                      isSearchSelected: currentPath == AppRoutes.search,
+                      onHomePressed: () => router.goNamed(AppRoutes.homeName),
                       onBackPressed: () {
                         if (router.canPop()) {
                           router.pop();

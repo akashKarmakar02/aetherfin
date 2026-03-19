@@ -71,6 +71,54 @@ void main() {
         ),
       );
     });
+
+    test('reuses cached GET responses across repeated requests', () async {
+      final adapter = FakeHttpClientAdapter();
+      var hitCount = 0;
+      adapter.onGet('/items', (options) {
+        hitCount += 1;
+        return jsonResponse(<String, dynamic>{'count': hitCount});
+      });
+      final dio = Dio()..httpClientAdapter = adapter;
+      final client = BaseApiClient(
+        baseUrl: 'https://example.com',
+        dio: dio,
+        enableResponseCache: true,
+      );
+      client.clearGetCache();
+
+      final first = await client.get<Map<String, dynamic>>('/items');
+      final second = await client.get<Map<String, dynamic>>('/items');
+
+      expect(first.data?['count'], 1);
+      expect(second.data?['count'], 1);
+      expect(hitCount, 1);
+      expect(adapter.requests, hasLength(1));
+    });
+
+    test('clearGetCache forces the next GET to refetch', () async {
+      final adapter = FakeHttpClientAdapter();
+      var hitCount = 0;
+      adapter.onGet('/items', (options) {
+        hitCount += 1;
+        return jsonResponse(<String, dynamic>{'count': hitCount});
+      });
+      final dio = Dio()..httpClientAdapter = adapter;
+      final client = BaseApiClient(
+        baseUrl: 'https://example.com',
+        dio: dio,
+        enableResponseCache: true,
+      );
+      client.clearGetCache();
+
+      final first = await client.get<Map<String, dynamic>>('/items');
+      client.clearGetCache();
+      final second = await client.get<Map<String, dynamic>>('/items');
+
+      expect(first.data?['count'], 1);
+      expect(second.data?['count'], 2);
+      expect(hitCount, 2);
+      expect(adapter.requests, hasLength(2));
+    });
   });
 }
-

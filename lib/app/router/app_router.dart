@@ -21,6 +21,7 @@ GoRouter createAppRouter(AppSessionController sessionController) {
             path.startsWith('/player/')) {
           return null;
         }
+        print("Hola");
         return AppRoutes.homePath;
       }
 
@@ -65,9 +66,8 @@ GoRouter createAppRouter(AppSessionController sessionController) {
       GoRoute(
         path: AppRoutes.playerPath,
         name: AppRoutes.playerName,
-        builder: (context, state) => PlayerScreen(
-          itemId: state.pathParameters['itemId'] ?? '',
-        ),
+        builder: (context, state) =>
+            PlayerScreen(itemId: state.pathParameters['itemId'] ?? ''),
       ),
     ],
   );

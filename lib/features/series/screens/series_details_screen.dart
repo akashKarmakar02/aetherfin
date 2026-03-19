@@ -1367,26 +1367,35 @@ class _CastCard extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: 10),
-          Text(
-            entry.person.name ?? 'Unknown',
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  entry.person.name ?? 'Unknown',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if ((entry.person.role ?? '').isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      entry.person.role!,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.66),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          if ((entry.person.role ?? '').isNotEmpty)
-            Text(
-              entry.person.role!,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.66),
-              ),
-            ),
         ],
       ),
     );

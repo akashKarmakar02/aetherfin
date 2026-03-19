@@ -8,6 +8,7 @@ import '../data/home_media_bar_loader.dart';
 import '../models/home_media_bar_view_data.dart';
 import '../widgets/home_continue_watching_section.dart';
 import '../widgets/home_media_bar_carousel.dart';
+import '../widgets/home_media_shelf_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.loader = loadHomeMediaBar});
@@ -90,6 +91,31 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: HomeContinueWatchingSection(
                                 entries: viewData!.continueWatchingEntries,
+                              ),
+                            ),
+                          ],
+                          if ((viewData?.nextUpEntries ?? const []).isNotEmpty) ...[
+                            SizedBox(height: isMobileCupertino ? 20 : 28),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobileCupertino ? 14 : 0,
+                              ),
+                              child: HomeMediaShelfSection(
+                                title: 'Next Up',
+                                entries: viewData!.nextUpEntries,
+                              ),
+                            ),
+                          ],
+                          if ((viewData?.recentlyAddedEntries ?? const [])
+                              .isNotEmpty) ...[
+                            SizedBox(height: isMobileCupertino ? 20 : 28),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobileCupertino ? 14 : 0,
+                              ),
+                              child: HomeMediaShelfSection(
+                                title: 'Recently Added',
+                                entries: viewData!.recentlyAddedEntries,
                               ),
                             ),
                           ],

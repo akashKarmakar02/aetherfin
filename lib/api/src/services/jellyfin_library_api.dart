@@ -213,6 +213,7 @@ class JellyfinLibraryApi extends JellyfinApiBase {
         path,
         options: jellyfinOptions(),
       );
+      client.clearGetCache();
       return;
     }
 
@@ -220,6 +221,8 @@ class JellyfinLibraryApi extends JellyfinApiBase {
       path,
       options: jellyfinOptions(),
     );
+
+    client.clearGetCache();
   }
 
   Future<JellyfinBaseItemQueryResult> getResumeItems({

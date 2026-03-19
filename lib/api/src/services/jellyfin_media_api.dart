@@ -58,6 +58,7 @@ class JellyfinMediaApi extends JellyfinApiBase {
       data: report.toJson(),
       options: jellyfinOptions(),
     );
+    client.clearGetCache();
   }
 
   Future<JellyfinMediaSegments?> fetchMediaSegments(String itemId) async {

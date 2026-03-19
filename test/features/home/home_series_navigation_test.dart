@@ -115,6 +115,91 @@ void main() {
 
     expect(find.text('series:series-parent season:2 episode:ep-2'), findsOneWidget);
   });
+
+  testWidgets('next up episode routes to parent series details', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = await _buildController();
+    final router = _buildRouter(
+      controller,
+      homeLoader: (_) async => HomeMediaBarViewData(
+        hasPlugin: true,
+        source: JellyfinMediaBarSource.list,
+        entries: const [],
+        nextUpEntries: [
+          HomeMediaBarEntry(
+            item: JellyfinBaseItem(
+              id: 'ep-5',
+              type: 'Episode',
+              name: 'The We We Are',
+              seriesId: 'series-parent',
+              seriesName: 'Severance',
+              parentIndexNumber: 2,
+              indexNumber: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      AppSessionScope(
+        notifier: controller,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('The We We Are'));
+    await tester.tap(find.text('The We We Are'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('series:series-parent season:2 episode:ep-5'), findsOneWidget);
+  });
+
+  testWidgets('recently added movie routes to player', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = await _buildController();
+    final router = _buildRouter(
+      controller,
+      homeLoader: (_) async => HomeMediaBarViewData(
+        hasPlugin: true,
+        source: JellyfinMediaBarSource.list,
+        entries: const [],
+        recentlyAddedEntries: [
+          HomeMediaBarEntry(
+            item: JellyfinBaseItem(
+              id: 'movie-1',
+              type: 'Movie',
+              name: 'Sinners',
+              productionYear: 2025,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      AppSessionScope(
+        notifier: controller,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Sinners'));
+    await tester.tap(find.text('Sinners'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('player:movie-1'), findsOneWidget);
+  });
 }
 
 Future<AppSessionController> _buildController() async {
@@ -160,6 +245,14 @@ GoRouter _buildRouter(
               ),
             ),
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.playerPath,
+        name: AppRoutes.playerName,
+        builder: (context, state) {
+          final itemId = state.pathParameters['itemId'] ?? '';
+          return Scaffold(body: Center(child: Text('player:$itemId')));
         },
       ),
     ],

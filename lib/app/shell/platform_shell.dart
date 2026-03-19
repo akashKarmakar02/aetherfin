@@ -10,12 +10,18 @@ class LinuxWindowShell extends StatefulWidget {
     required this.child,
     this.showBackButton = false,
     this.onBackPressed,
+    this.isHomeSelected = false,
+    this.isSearchSelected = false,
+    this.onHomePressed,
     this.enableTray = true,
   });
 
   final Widget child;
   final bool showBackButton;
   final VoidCallback? onBackPressed;
+  final bool isHomeSelected;
+  final bool isSearchSelected;
+  final VoidCallback? onHomePressed;
   final bool enableTray;
 
   @override
@@ -62,7 +68,6 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
         window.show();
         break;
       case 'hide':
-        print("Hola");
         window.hide();
         break;
       case 'quit':
@@ -82,6 +87,7 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
       appBar: YaruWindowTitleBar(
         backgroundColor: scheme.surface,
         border: BorderSide.none,
+        centerTitle: true,
         leading: widget.showBackButton
             ? Padding(
                 padding: const EdgeInsets.only(left: 0),
@@ -112,9 +118,88 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
                 ),
               )
             : null,
-        title: const Text('FlutterFin'),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 3,
+          children: !widget.showBackButton
+              ? [
+                  SizedBox(width: 56),
+                  _LinuxTitleBarActionButton(
+                    icon: YaruIcons.home_filled,
+                    label: 'Home',
+                    selected: widget.isHomeSelected,
+                    onPressed: widget.onHomePressed,
+                  ),
+                  _LinuxTitleBarActionButton(
+                    icon: CupertinoIcons.search,
+                    label: 'Search',
+                    selected: widget.isSearchSelected,
+                    onPressed: widget.onHomePressed,
+                  ),
+                ]
+              : [],
+        ),
       ),
       body: ColoredBox(color: scheme.surface, child: widget.child),
+    );
+  }
+}
+
+class _LinuxTitleBarActionButton extends StatelessWidget {
+  const _LinuxTitleBarActionButton({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final baseColor = selected
+        ? scheme.onSurface.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.14 : 0.08,
+          )
+        : Colors.transparent;
+    const buttonHeight = 34.0;
+    final borderRadius = BorderRadius.circular(10);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: borderRadius,
+        hoverColor: scheme.onSurface.withValues(alpha: 0.12),
+        splashColor: scheme.onSurface.withValues(alpha: 0.06),
+        highlightColor: scheme.onSurface.withValues(alpha: 0.18),
+        child: Ink(
+          height: buttonHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: borderRadius,
+          ),
+          child: DefaultTextStyle(
+            style: (theme.textTheme.labelLarge ?? const TextStyle()).copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            child: IconTheme(
+              data: IconThemeData(color: scheme.onSurface, size: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Icon(icon), const SizedBox(width: 8), Text(label)],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

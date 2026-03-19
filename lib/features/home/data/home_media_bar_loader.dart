@@ -40,27 +40,59 @@ Future<HomeMediaBarViewData> loadHomeMediaBar(
     clientInfo: clientInfo,
     accessToken: accessToken,
   );
+  const homeFields = ['Genres'];
+  const homeImageTypes = ['Primary', 'Backdrop', 'Thumb', 'Logo'];
 
   try {
-    final hasPlugin = await pluginApi.hasMediaBarPlugin();
+    final hasPluginFuture = pluginApi.hasMediaBarPlugin();
+    final resumeItemsFuture = libraryApi.getResumeItems(
+      userId: userId,
+      startIndex: 0,
+      limit: 10,
+      fields: homeFields,
+      enableImageTypes: homeImageTypes,
+      includeItemTypes: const ['Movie', 'Series', 'Episode'],
+    );
+    final nextUpItemsFuture = libraryApi.getNextUp(
+      userId: userId,
+      fields: homeFields,
+      enableImageTypes: homeImageTypes,
+      limit: 10,
+    );
+    final recentlyAddedItemsFuture = libraryApi.getItems(
+      JellyfinItemsQuery(
+        userId: userId,
+        recursive: true,
+        limit: 12,
+        includeItemTypes: const ['Movie', 'Series', 'Episode'],
+        enableUserData: true,
+        fields: homeFields,
+        enableImageTypes: homeImageTypes,
+        sortBy: const ['DateCreated'],
+        extra: const {'SortOrder': 'Descending'},
+      ),
+    );
+
+    final hasPlugin = await hasPluginFuture;
     final content = hasPlugin
         ? await mediaApi.fetchMediaBarContent(
             userId: userId,
             limit: 8,
           )
         : JellyfinMediaBarContent(source: JellyfinMediaBarSource.none);
-    final resumeItems = await libraryApi.getResumeItems(
-      userId: userId,
-      startIndex: 0,
-      limit: 10,
-      fields: const ['Genres'],
-      enableImageTypes: const ['Primary', 'Backdrop', 'Thumb', 'Logo'],
-      includeItemTypes: const ['Movie', 'Series', 'Episode'],
-    );
-    final entries = content.items.map((item) => _buildEntry(mediaApi, item)).toList(
-          growable: false,
-        );
+    final resumeItems = await resumeItemsFuture;
+    final nextUpItems = await nextUpItemsFuture;
+    final recentlyAddedItems = await recentlyAddedItemsFuture;
+    final entries = content.items
+        .map((item) => _buildEntry(mediaApi, item))
+        .toList(growable: false);
     final continueWatchingEntries = resumeItems.items
+        .map((item) => _buildEntry(mediaApi, item))
+        .toList(growable: false);
+    final nextUpEntries = nextUpItems
+        .map((item) => _buildEntry(mediaApi, item))
+        .toList(growable: false);
+    final recentlyAddedEntries = recentlyAddedItems.items
         .map((item) => _buildEntry(mediaApi, item))
         .toList(growable: false);
 
@@ -69,6 +101,8 @@ Future<HomeMediaBarViewData> loadHomeMediaBar(
       source: content.source,
       entries: entries,
       continueWatchingEntries: continueWatchingEntries,
+      nextUpEntries: nextUpEntries,
+      recentlyAddedEntries: recentlyAddedEntries,
     );
   } catch (_) {
     return const HomeMediaBarViewData(

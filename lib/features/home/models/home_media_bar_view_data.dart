@@ -22,12 +22,20 @@ class HomeMediaBarViewData {
     required this.source,
     this.entries = const [],
     this.continueWatchingEntries = const [],
+    this.nextUpEntries = const [],
+    this.recentlyAddedEntries = const [],
   });
 
   final bool hasPlugin;
   final JellyfinMediaBarSource source;
   final List<HomeMediaBarEntry> entries;
   final List<HomeMediaBarEntry> continueWatchingEntries;
+  final List<HomeMediaBarEntry> nextUpEntries;
+  final List<HomeMediaBarEntry> recentlyAddedEntries;
 
-  bool get hasContent => entries.isNotEmpty;
+  bool get hasContent =>
+      entries.isNotEmpty ||
+      continueWatchingEntries.isNotEmpty ||
+      nextUpEntries.isNotEmpty ||
+      recentlyAddedEntries.isNotEmpty;
 }
