@@ -24,6 +24,23 @@ class AetherfinApp extends StatelessWidget {
   final AppSessionController sessionController;
   final bool enableLinuxTray;
 
+  String _currentLinuxPath(GoRouter router) {
+    final configuration = router.routerDelegate.currentConfiguration;
+    if (configuration.isNotEmpty) {
+      final activePath = configuration.last.matchedLocation;
+      if (activePath.isNotEmpty) {
+        return activePath;
+      }
+    }
+
+    final routeInfoPath = router.routeInformationProvider.value.uri.path;
+    if (routeInfoPath.isNotEmpty) {
+      return routeInfoPath;
+    }
+
+    return AppRoutes.startupPath;
+  }
+
   bool _isFullscreenPath(String path) {
     return path.startsWith('/player/');
   }
@@ -44,18 +61,18 @@ class AetherfinApp extends StatelessWidget {
               darkTheme: darkTheme,
               routerConfig: router,
               builder: (context, routeChild) {
-                return ValueListenableBuilder<RouteInformation>(
-                  valueListenable: router.routeInformationProvider,
-                  builder: (context, routeInformation, _) {
-                    final currentPath = routeInformation.uri.path;
+                return AnimatedBuilder(
+                  animation: router.routerDelegate,
+                  builder: (context, _) {
+                    final currentPath = _currentLinuxPath(router);
                     if (_isFullscreenPath(currentPath)) {
                       return routeChild ?? const SizedBox.shrink();
                     }
-                    print(currentPath);
                     return LinuxWindowShell(
                       enableTray: enableLinuxTray,
                       showBackButton: currentPath.startsWith('/series/'),
                       isHomeSelected: currentPath == AppRoutes.homePath,
+                      isLoading: currentPath == AppRoutes.startupPath,
                       isSearchSelected: currentPath == AppRoutes.search,
                       onHomePressed: () => router.goNamed(AppRoutes.homeName),
                       onBackPressed: () {

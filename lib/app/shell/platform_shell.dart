@@ -12,6 +12,7 @@ class LinuxWindowShell extends StatefulWidget {
     this.onBackPressed,
     this.isHomeSelected = false,
     this.isSearchSelected = false,
+    this.isLoading = false,
     this.onHomePressed,
     this.enableTray = true,
   });
@@ -21,6 +22,7 @@ class LinuxWindowShell extends StatefulWidget {
   final VoidCallback? onBackPressed;
   final bool isHomeSelected;
   final bool isSearchSelected;
+  final bool isLoading;
   final VoidCallback? onHomePressed;
   final bool enableTray;
 
@@ -121,7 +123,7 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 3,
-          children: !widget.showBackButton
+          children: !widget.showBackButton && !widget.isLoading
               ? [
                   SizedBox(width: 56),
                   _LinuxTitleBarActionButton(

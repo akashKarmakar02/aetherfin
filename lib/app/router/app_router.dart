@@ -21,7 +21,6 @@ GoRouter createAppRouter(AppSessionController sessionController) {
             path.startsWith('/player/')) {
           return null;
         }
-        print("Hola");
         return AppRoutes.homePath;
       }
 
