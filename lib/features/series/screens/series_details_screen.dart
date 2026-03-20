@@ -1040,9 +1040,8 @@ class _EpisodeMediaCard extends StatelessWidget {
       entry.subtitle,
       runtimeLabel,
     ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
-    final body = AnimatedContainer(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
+    final body = RepaintBoundary(
+      child: Container(
       width: isCupertinoMobile ? 286 : 332,
       decoration: BoxDecoration(
         color: const Color(0xFF1A1B1E),
@@ -1086,25 +1085,30 @@ class _EpisodeMediaCard extends StatelessWidget {
                 bottom: Radius.circular(22),
                 top: Radius.circular(16),
               ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(22)),
-                    color: const Color(0xFF6C756A).withValues(alpha: 0.16),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.02),
-                        Colors.black.withValues(alpha: 0.12),
-                        Colors.black.withValues(alpha: 0.22),
-                      ],
-                      stops: const [0, 0.36, 1],
-                    ),
+              child: DecoratedBox(
+                // Mobile season rails stuttered with a per-card blur filter.
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(22)),
+                  color: const Color(0xFF6C756A).withValues(
+                    alpha: isCupertinoMobile ? 0.22 : 0.16,
                   ),
-                  child: const SizedBox.expand(),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.02),
+                      Colors.black.withValues(alpha: isCupertinoMobile ? 0.18 : 0.12),
+                      Colors.black.withValues(alpha: isCupertinoMobile ? 0.28 : 0.22),
+                    ],
+                    stops: const [0, 0.36, 1],
+                  ),
                 ),
+                child: isCupertinoMobile
+                    ? const SizedBox.expand()
+                    : BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: const SizedBox.expand(),
+                      ),
               ),
             ),
           ),
@@ -1187,6 +1191,7 @@ class _EpisodeMediaCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
 

@@ -13,10 +13,7 @@ import '../data/search_loader.dart';
 import '../models/search_view_data.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({
-    super.key,
-    this.loader = const AppSearchLoader(),
-  });
+  const SearchScreen({super.key, this.loader = const AppSearchLoader()});
 
   final AppSearchLoader loader;
 
@@ -155,11 +152,11 @@ class _SearchScreenState extends State<SearchScreen> {
       top: false,
       child: Material(
         color: Colors.transparent,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1040),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1040),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -183,6 +180,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     autofocus: true,
                     hintText: 'Movies, series, episodes, collections, actors',
                     style: YaruSearchFieldStyle.filledOutlined,
+                    height: 40,
+                    radius: const Radius.circular(12),
+                    contentPadding: const EdgeInsets.only(
+                      left: 14,
+                      right: 14,
+                      top: 10,
+                      bottom: 10,
+                    ),
                     onChanged: _handleQueryChanged,
                     onClear: () {
                       _queryController.clear();
@@ -190,13 +195,13 @@ class _SearchScreenState extends State<SearchScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  if (_isLoading)
-                    LinearProgressIndicator(
-                      minHeight: 2,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  if (_isLoading) const SizedBox(height: 20),
-                  _buildDesktopContent(context),
+                  Expanded(
+                    child: _isLoading
+                        ? const Center(child: _SearchLoadingIndicator())
+                        : SingleChildScrollView(
+                            child: _buildDesktopContent(context),
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -210,9 +215,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final theme = CupertinoTheme.of(context);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Search'),
-      ),
+      navigationBar: const CupertinoNavigationBar(middle: Text('Search')),
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -252,7 +255,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           if (_isLoading)
                             const Padding(
                               padding: EdgeInsets.only(bottom: 16),
-                              child: Center(child: CupertinoActivityIndicator()),
+                              child: Center(child: _SearchLoadingIndicator()),
                             ),
                           _buildCupertinoContent(context),
                         ],
@@ -268,11 +271,15 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String get _backendLabel => (_viewData?.backend ?? SearchBackend.jellyfin).label;
+  String get _backendLabel =>
+      (_viewData?.backend ?? SearchBackend.jellyfin).label;
 
   Widget _buildDesktopContent(BuildContext context) {
     final query = _query;
     final viewData = _viewData;
+    if (_isLoading) {
+      return const SizedBox.shrink();
+    }
     if (query.isEmpty) {
       return _DesktopSuggestionState(
         suggestions: _exampleSearches,
@@ -303,6 +310,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildCupertinoContent(BuildContext context) {
     final query = _query;
     final viewData = _viewData;
+    if (_isLoading) {
+      return const SizedBox.shrink();
+    }
     if (query.isEmpty) {
       return _CupertinoSuggestionState(
         suggestions: _exampleSearches,
@@ -331,6 +341,22 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+class _SearchLoadingIndicator extends StatelessWidget {
+  const _SearchLoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (currentAppPlatform) {
+      AppPlatform.cupertino => const CupertinoActivityIndicator(radius: 18),
+      _ => const SizedBox(
+        height: 42,
+        width: 42,
+        child: CircularProgressIndicator(strokeWidth: 3),
+      ),
+    };
+  }
+}
+
 class _DesktopSearchSection extends StatelessWidget {
   const _DesktopSearchSection({required this.section});
 
@@ -353,11 +379,11 @@ class _DesktopSearchSection extends StatelessWidget {
         const SizedBox(height: 12),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerLow,
+            color: scheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.45),
-            ),
+            // border: Border.all(
+            //   color: scheme.outlineVariant.withValues(alpha: 0.28),
+            // ),
           ),
           child: Column(
             children: [
@@ -375,10 +401,7 @@ class _DesktopSearchSection extends StatelessWidget {
 }
 
 class _DesktopSearchRow extends StatelessWidget {
-  const _DesktopSearchRow({
-    required this.entry,
-    required this.showDivider,
-  });
+  const _DesktopSearchRow({required this.entry, required this.showDivider});
 
   final SearchResultEntry entry;
   final bool showDivider;
@@ -395,10 +418,11 @@ class _DesktopSearchRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
+          color: Colors.transparent,
           border: showDivider
               ? Border(
                   bottom: BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 0.30),
+                    color: scheme.outlineVariant.withValues(alpha: 0.18),
                   ),
                 )
               : null,
@@ -430,7 +454,7 @@ class _DesktopSearchRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -441,7 +465,7 @@ class _DesktopSearchRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.92),
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.74),
                       ),
                     ),
                   ],
@@ -453,13 +477,16 @@ class _DesktopSearchRow extends StatelessWidget {
               Icon(
                 YaruIcons.go_next,
                 size: 18,
-                color: scheme.onSurfaceVariant,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
               )
             else
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
+                  color: scheme.surfaceContainerHigh.withValues(alpha: 0.82),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -607,7 +634,8 @@ class _SearchArtwork extends StatelessWidget {
             : Image.network(
                 artworkUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _ArtworkPlaceholder(kind: artworkKind),
+                errorBuilder: (_, _, _) =>
+                    _ArtworkPlaceholder(kind: artworkKind),
               ),
       ),
     );
@@ -634,9 +662,7 @@ class _ArtworkPlaceholder extends StatelessWidget {
       SearchArtworkKind.circle => Icons.person_outline_rounded,
     };
 
-    return Center(
-      child: Icon(icon, size: 24),
-    );
+    return Center(child: Icon(icon, size: 24));
   }
 }
 
@@ -720,9 +746,9 @@ class _CupertinoSuggestionState extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Results follow your Streamyfin search engine setting when the plugin is available.',
-          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-            color: secondary,
-          ),
+          style: CupertinoTheme.of(
+            context,
+          ).textTheme.textStyle.copyWith(color: secondary),
         ),
         const SizedBox(height: 18),
         Wrap(
@@ -731,15 +757,18 @@ class _CupertinoSuggestionState extends StatelessWidget {
           children: [
             for (final suggestion in suggestions)
               CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
                 borderRadius: BorderRadius.circular(999),
                 onPressed: () => onSuggestionPressed(suggestion),
                 child: Text(
                   suggestion,
-                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                    fontSize: 14,
-                  ),
+                  style: CupertinoTheme.of(
+                    context,
+                  ).textTheme.textStyle.copyWith(fontSize: 14),
                 ),
               ),
           ],
@@ -754,15 +783,7 @@ class _DesktopLoadingPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 
@@ -835,10 +856,7 @@ class _DesktopErrorState extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          FilledButton.tonal(
-            onPressed: onRetry,
-            child: const Text('Retry'),
-          ),
+          FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );
