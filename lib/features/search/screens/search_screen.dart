@@ -1,0 +1,893 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:yaru/yaru.dart';
+
+import '../../../api/api.dart';
+import '../../../app/platform/app_platform.dart';
+import '../../../app/session/app_session_scope.dart';
+import '../../player/player_navigation.dart';
+import '../../series/series_navigation.dart';
+import '../data/search_loader.dart';
+import '../models/search_view_data.dart';
+
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({
+    super.key,
+    this.loader = const AppSearchLoader(),
+  });
+
+  final AppSearchLoader loader;
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  static const _exampleSearches = [
+    'Lord of the Rings',
+    'Severance',
+    'Dune',
+    'Blue Eye Samurai',
+    'Arrival',
+    'Andor',
+  ];
+
+  final _queryController = TextEditingController();
+  final _focusNode = FocusNode();
+
+  Timer? _debounce;
+  int _requestId = 0;
+  String? _sessionKey;
+  bool _isLoading = false;
+  Object? _error;
+  SearchViewData? _viewData;
+
+  bool get _isCupertino => currentAppPlatform == AppPlatform.cupertino;
+  String get _query => _queryController.text.trim();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final session = AppSessionScope.watch(context);
+    final nextKey = [
+      session.serverUrl,
+      session.accessToken,
+      session.user?.id,
+    ].join('|');
+    if (_sessionKey == nextKey) {
+      return;
+    }
+    _sessionKey = nextKey;
+    if (_query.isNotEmpty) {
+      _runSearch(immediate: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _queryController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleQueryChanged(String _) {
+    _debounce?.cancel();
+    setState(() {
+      _error = null;
+      if (_query.isEmpty) {
+        _viewData = null;
+        _isLoading = false;
+      }
+    });
+    if (_query.isEmpty) {
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 250), _runSearch);
+  }
+
+  Future<void> _runSearch({bool immediate = false}) async {
+    if (!mounted) {
+      return;
+    }
+
+    final query = _query;
+    if (query.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _error = null;
+        _viewData = null;
+      });
+      return;
+    }
+
+    final session = AppSessionScope.read(context);
+    final requestId = ++_requestId;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      if (immediate) {
+        _viewData = null;
+      }
+    });
+
+    try {
+      final data = await widget.loader.load(session, query);
+      if (!mounted || requestId != _requestId) {
+        return;
+      }
+      setState(() {
+        _viewData = data;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted || requestId != _requestId) {
+        return;
+      }
+      setState(() {
+        _error = error;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _applySuggestion(String query) {
+    _queryController
+      ..text = query
+      ..selection = TextSelection.collapsed(offset: query.length);
+    _handleQueryChanged(query);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isCupertino
+        ? _buildCupertinoScaffold(context)
+        : _buildDesktopScaffold(context);
+  }
+
+  Widget _buildDesktopScaffold(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return SafeArea(
+      top: false,
+      child: Material(
+        color: Colors.transparent,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1040),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Search',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Search your Jellyfin library using $_backendLabel.',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  YaruSearchField(
+                    controller: _queryController,
+                    focusNode: _focusNode,
+                    autofocus: true,
+                    hintText: 'Movies, series, episodes, collections, actors',
+                    style: YaruSearchFieldStyle.filledOutlined,
+                    onChanged: _handleQueryChanged,
+                    onClear: () {
+                      _queryController.clear();
+                      _handleQueryChanged('');
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  if (_isLoading)
+                    LinearProgressIndicator(
+                      minHeight: 2,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  if (_isLoading) const SizedBox(height: 20),
+                  _buildDesktopContent(context),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCupertinoScaffold(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Search'),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+              child: CupertinoSearchTextField(
+                controller: _queryController,
+                focusNode: _focusNode,
+                autofocus: true,
+                placeholder: 'Movies, series, episodes',
+                onChanged: _handleQueryChanged,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Using $_backendLabel',
+                  style: theme.textTheme.textStyle.copyWith(
+                    fontSize: 13,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_isLoading)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 16),
+                              child: Center(child: CupertinoActivityIndicator()),
+                            ),
+                          _buildCupertinoContent(context),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String get _backendLabel => (_viewData?.backend ?? SearchBackend.jellyfin).label;
+
+  Widget _buildDesktopContent(BuildContext context) {
+    final query = _query;
+    final viewData = _viewData;
+    if (query.isEmpty) {
+      return _DesktopSuggestionState(
+        suggestions: _exampleSearches,
+        onSuggestionPressed: _applySuggestion,
+      );
+    }
+    if (_error != null && viewData == null) {
+      return _DesktopErrorState(onRetry: () => _runSearch(immediate: true));
+    }
+    if (viewData == null) {
+      return const _DesktopLoadingPlaceholder();
+    }
+    if (!viewData.hasResults) {
+      return _DesktopEmptyResults(query: query);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final section in viewData.sections) ...[
+          _DesktopSearchSection(section: section),
+          const SizedBox(height: 20),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCupertinoContent(BuildContext context) {
+    final query = _query;
+    final viewData = _viewData;
+    if (query.isEmpty) {
+      return _CupertinoSuggestionState(
+        suggestions: _exampleSearches,
+        onSuggestionPressed: _applySuggestion,
+      );
+    }
+    if (_error != null && viewData == null) {
+      return _CupertinoErrorState(onRetry: () => _runSearch(immediate: true));
+    }
+    if (viewData == null) {
+      return const SizedBox.shrink();
+    }
+    if (!viewData.hasResults) {
+      return _CupertinoEmptyResults(query: query);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final section in viewData.sections) ...[
+          _CupertinoSearchSection(section: section),
+          const SizedBox(height: 26),
+        ],
+      ],
+    );
+  }
+}
+
+class _DesktopSearchSection extends StatelessWidget {
+  const _DesktopSearchSection({required this.section});
+
+  final SearchSectionViewData section;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          section.title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < section.entries.length; i++)
+                _DesktopSearchRow(
+                  entry: section.entries[i],
+                  showDivider: i != section.entries.length - 1,
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DesktopSearchRow extends StatelessWidget {
+  const _DesktopSearchRow({
+    required this.entry,
+    required this.showDivider,
+  });
+
+  final SearchResultEntry entry;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final onTap = _tapHandler(context, entry.item);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: showDivider
+              ? Border(
+                  bottom: BorderSide(
+                    color: scheme.outlineVariant.withValues(alpha: 0.30),
+                  ),
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            _SearchArtwork(
+              artworkUrl: entry.artworkUrl,
+              artworkKind: entry.artworkKind,
+              desktop: true,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.item.name ?? 'Untitled',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if ((entry.subtitle ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      entry.subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  if ((entry.item.overview ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      entry.item.overview!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.92),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (onTap != null)
+              Icon(
+                YaruIcons.go_next,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _typeLabel(entry.item),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CupertinoSearchSection extends StatelessWidget {
+  const _CupertinoSearchSection({required this.section});
+
+  final SearchSectionViewData section;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          section.title,
+          style: theme.textTheme.navTitleTextStyle.copyWith(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 228,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: section.entries.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return _CupertinoSearchCard(entry: section.entries[index]);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CupertinoSearchCard extends StatelessWidget {
+  const _CupertinoSearchCard({required this.entry});
+
+  final SearchResultEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+    final onTap = _tapHandler(context, entry.item);
+    final width = switch (entry.artworkKind) {
+      SearchArtworkKind.poster => 124.0,
+      SearchArtworkKind.landscape => 196.0,
+      SearchArtworkKind.circle => 104.0,
+    };
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SearchArtwork(
+              artworkUrl: entry.artworkUrl,
+              artworkKind: entry.artworkKind,
+              desktop: false,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              entry.item.name ?? 'Untitled',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.textStyle.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if ((entry.subtitle ?? '').isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                entry.subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.textStyle.copyWith(
+                  fontSize: 12,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchArtwork extends StatelessWidget {
+  const _SearchArtwork({
+    required this.artworkUrl,
+    required this.artworkKind,
+    required this.desktop,
+  });
+
+  final String? artworkUrl;
+  final SearchArtworkKind artworkKind;
+  final bool desktop;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = switch ((desktop, artworkKind)) {
+      (true, SearchArtworkKind.poster) => const Size(54, 82),
+      (true, SearchArtworkKind.landscape) => const Size(104, 58),
+      (true, SearchArtworkKind.circle) => const Size(52, 52),
+      (false, SearchArtworkKind.poster) => const Size(124, 178),
+      (false, SearchArtworkKind.landscape) => const Size(196, 110),
+      (false, SearchArtworkKind.circle) => const Size(96, 96),
+    };
+    final borderRadius = switch (artworkKind) {
+      SearchArtworkKind.poster => BorderRadius.circular(desktop ? 12 : 18),
+      SearchArtworkKind.landscape => BorderRadius.circular(desktop ? 12 : 16),
+      SearchArtworkKind.circle => BorderRadius.circular(999),
+    };
+
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Container(
+        width: size.width,
+        height: size.height,
+        color: _fallbackColor(context),
+        child: artworkUrl == null
+            ? _ArtworkPlaceholder(kind: artworkKind)
+            : Image.network(
+                artworkUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _ArtworkPlaceholder(kind: artworkKind),
+              ),
+      ),
+    );
+  }
+
+  Color _fallbackColor(BuildContext context) {
+    if (desktop) {
+      return Theme.of(context).colorScheme.surfaceContainerHighest;
+    }
+    return CupertinoColors.tertiarySystemFill.resolveFrom(context);
+  }
+}
+
+class _ArtworkPlaceholder extends StatelessWidget {
+  const _ArtworkPlaceholder({required this.kind});
+
+  final SearchArtworkKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = switch (kind) {
+      SearchArtworkKind.poster => Icons.movie_creation_outlined,
+      SearchArtworkKind.landscape => Icons.live_tv_rounded,
+      SearchArtworkKind.circle => Icons.person_outline_rounded,
+    };
+
+    return Center(
+      child: Icon(icon, size: 24),
+    );
+  }
+}
+
+class _DesktopSuggestionState extends StatelessWidget {
+  const _DesktopSuggestionState({
+    required this.suggestions,
+    required this.onSuggestionPressed,
+  });
+
+  final List<String> suggestions;
+  final ValueChanged<String> onSuggestionPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Start with something specific',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This search follows the Streamyfin plugin preference when available, then falls back to Jellyfin.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final suggestion in suggestions)
+                ActionChip(
+                  label: Text(suggestion),
+                  onPressed: () => onSuggestionPressed(suggestion),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CupertinoSuggestionState extends StatelessWidget {
+  const _CupertinoSuggestionState({
+    required this.suggestions,
+    required this.onSuggestionPressed,
+  });
+
+  final List<String> suggestions;
+  final ValueChanged<String> onSuggestionPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Search your library',
+          style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Results follow your Streamyfin search engine setting when the plugin is available.',
+          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+            color: secondary,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final suggestion in suggestions)
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                borderRadius: BorderRadius.circular(999),
+                onPressed: () => onSuggestionPressed(suggestion),
+                child: Text(
+                  suggestion,
+                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DesktopLoadingPlaceholder extends StatelessWidget {
+  const _DesktopLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+      ),
+    );
+  }
+}
+
+class _DesktopEmptyResults extends StatelessWidget {
+  const _DesktopEmptyResults({required this.query});
+
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        'No results found for "$query".',
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _CupertinoEmptyResults extends StatelessWidget {
+  const _CupertinoEmptyResults({required this.query});
+
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'No results found for "$query".',
+      style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+      ),
+    );
+  }
+}
+
+class _DesktopErrorState extends StatelessWidget {
+  const _DesktopErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Search failed. Try again.',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          FilledButton.tonal(
+            onPressed: onRetry,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CupertinoErrorState extends StatelessWidget {
+  const _CupertinoErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Search failed. Try again.',
+            style: CupertinoTheme.of(context).textTheme.textStyle,
+          ),
+        ),
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: onRetry,
+          child: const Text('Retry'),
+        ),
+      ],
+    );
+  }
+}
+
+VoidCallback? _tapHandler(BuildContext context, JellyfinBaseItem item) {
+  if (seriesNavigationTargetForItem(item) != null) {
+    return () => pushSeriesDetailsForItem(context, item);
+  }
+  if (item.isMovie || item.type == 'Video') {
+    return () => pushPlayerForItem(context, item);
+  }
+  return null;
+}
+
+String _typeLabel(JellyfinBaseItem item) {
+  return switch (item.type) {
+    'Movie' => 'Movie',
+    'Series' => 'Series',
+    'Episode' => 'Episode',
+    'BoxSet' => 'Collection',
+    'Person' => 'Actor',
+    final type? => type,
+    null => 'Item',
+  };
+}

@@ -73,8 +73,10 @@ class AetherfinApp extends StatelessWidget {
                       showBackButton: currentPath.startsWith('/series/'),
                       isHomeSelected: currentPath == AppRoutes.homePath,
                       isLoading: currentPath == AppRoutes.startupPath,
-                      isSearchSelected: currentPath == AppRoutes.search,
+                      isSearchSelected: currentPath == AppRoutes.searchPath,
                       onHomePressed: () => router.goNamed(AppRoutes.homeName),
+                      onSearchPressed: () =>
+                          router.goNamed(AppRoutes.searchName),
                       onBackPressed: () {
                         if (router.canPop()) {
                           router.pop();

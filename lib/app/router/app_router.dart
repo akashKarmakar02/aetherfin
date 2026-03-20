@@ -5,6 +5,7 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/startup_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/player/screens/player_screen.dart';
+import '../../features/search/screens/search_screen.dart';
 import '../../features/series/screens/series_details_screen.dart';
 import '../session/app_session_controller.dart';
 import 'app_routes.dart';
@@ -17,6 +18,7 @@ GoRouter createAppRouter(AppSessionController sessionController) {
       if (sessionController.phase == AppSessionPhase.loggedIn) {
         final path = state.uri.path;
         if (path == AppRoutes.homePath ||
+            path == AppRoutes.searchPath ||
             path.startsWith('/series/') ||
             path.startsWith('/player/')) {
           return null;
@@ -50,6 +52,11 @@ GoRouter createAppRouter(AppSessionController sessionController) {
         path: AppRoutes.homePath,
         name: AppRoutes.homeName,
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.searchPath,
+        name: AppRoutes.searchName,
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: AppRoutes.seriesPath,

@@ -14,6 +14,7 @@ class LinuxWindowShell extends StatefulWidget {
     this.isSearchSelected = false,
     this.isLoading = false,
     this.onHomePressed,
+    this.onSearchPressed,
     this.enableTray = true,
   });
 
@@ -24,6 +25,7 @@ class LinuxWindowShell extends StatefulWidget {
   final bool isSearchSelected;
   final bool isLoading;
   final VoidCallback? onHomePressed;
+  final VoidCallback? onSearchPressed;
   final bool enableTray;
 
   @override
@@ -136,7 +138,7 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
                     icon: CupertinoIcons.search,
                     label: 'Search',
                     selected: widget.isSearchSelected,
-                    onPressed: widget.onHomePressed,
+                    onPressed: widget.onSearchPressed,
                   ),
                 ]
               : [],

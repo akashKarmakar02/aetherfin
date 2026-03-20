@@ -21,10 +21,7 @@ Future<void> bootstrapApp() async {
 }
 
 class AppBootstrap extends StatefulWidget {
-  const AppBootstrap({
-    super.key,
-    this.enableLinuxTray = true,
-  });
+  const AppBootstrap({super.key, this.enableLinuxTray = true});
 
   final bool enableLinuxTray;
 
