@@ -704,6 +704,55 @@ class _SeasonSelector extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    if (data.seasons.length == 1) {
+      final title = data.selectedSeason?.title ?? data.seasons.first.title;
+
+      if (isCupertinoMobile) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Text(
+            title,
+            style: const TextStyle(color: Colors.white),
+          ),
+        );
+      }
+
+      if (isLinuxDesktop) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        );
+      }
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
     if (isCupertinoMobile && data.seasons.length <= 4) {
       return CupertinoSlidingSegmentedControl<int>(
         groupValue: data.selectedSeasonIndex,
