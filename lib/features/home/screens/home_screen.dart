@@ -1,9 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../api/api.dart';
+import '../../../app/router/app_routes.dart';
 import '../../../app/platform/app_platform.dart';
 import '../../../app/session/app_session_scope.dart';
+import '../../../shared/widgets/mobile_cupertino_media_chrome.dart';
 import '../data/home_media_bar_loader.dart';
 import '../models/home_media_bar_view_data.dart';
 import '../widgets/home_continue_watching_section.dart';
@@ -138,13 +140,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         top: 0,
                         left: 0,
                         right: 0,
-                        child: _MobileAppleTvHeader(),
+                        child: MobileCupertinoMediaHeader(),
                       ),
-                      const Positioned(
+                      Positioned(
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        child: _MobileAppleTvNavBar(),
+                        child: MobileCupertinoMediaNavBar(
+                          selectedDestination: MobileCupertinoDestination.home,
+                          onHomePressed: null,
+                          onSearchPressed: () =>
+                              context.goNamed(AppRoutes.searchName),
+                        ),
                       ),
                     ],
                   );
@@ -164,142 +171,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-class _MobileAppleTvHeader extends StatelessWidget {
-  const _MobileAppleTvHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final topInset = MediaQuery.viewPaddingOf(context).top;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 4),
-      child: Row(
-        children: [
-          Text(
-            'tv',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.4,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Center(
-              child: Text(
-                'DR',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MobileAppleTvNavBar extends StatelessWidget {
-  const _MobileAppleTvNavBar();
-
-  static const _items = [
-    ('Apple TV', CupertinoIcons.tv, true),
-    ('MLS', CupertinoIcons.sportscourt, false),
-    ('Downloads', CupertinoIcons.arrow_down_to_line, false),
-    ('Search', CupertinoIcons.search, false),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            for (final item in _items)
-              _MobileNavItem(
-                title: item.$1,
-                icon: item.$2,
-                selected: item.$3,
-                theme: theme,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MobileNavItem extends StatelessWidget {
-  const _MobileNavItem({
-    required this.title,
-    required this.icon,
-    required this.selected,
-    required this.theme,
-  });
-
-  final String title;
-  final IconData icon;
-  final bool selected;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected
-        ? Colors.white
-        : Colors.white.withValues(alpha: 0.52);
-
-    return SizedBox(
-      width: 72,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 6),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: selected ? 28 : 0,
-            height: 3,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

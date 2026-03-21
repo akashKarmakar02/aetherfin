@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yaru/yaru.dart';
 
 import '../../../api/api.dart';
 import '../../../app/platform/app_platform.dart';
+import '../../../app/router/app_routes.dart';
 import '../../../app/session/app_session_scope.dart';
+import '../../../shared/widgets/mobile_cupertino_media_chrome.dart';
 import '../../player/player_navigation.dart';
 import '../../series/series_navigation.dart';
 import '../data/search_loader.dart';
@@ -30,6 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
     'Arrival',
     'Andor',
   ];
+  static const _desktopContentMaxWidth = 1000.0;
 
   final _queryController = TextEditingController();
   final _focusNode = FocusNode();
@@ -139,9 +143,18 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _isCupertino
-        ? _buildCupertinoScaffold(context)
-        : _buildDesktopScaffold(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobileCupertino =
+            _isCupertino && constraints.maxWidth < 700;
+        if (isMobileCupertino) {
+          return _buildMobileCupertinoScaffold(context);
+        }
+        return _isCupertino
+            ? _buildCupertinoScaffold(context)
+            : _buildDesktopScaffold(context);
+      },
+    );
   }
 
   Widget _buildDesktopScaffold(BuildContext context) {
@@ -152,60 +165,79 @@ class _SearchScreenState extends State<SearchScreen> {
       top: false,
       child: Material(
         color: Colors.transparent,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1040),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Search',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Search your Jellyfin library using $_backendLabel.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  YaruSearchField(
-                    controller: _queryController,
-                    focusNode: _focusNode,
-                    autofocus: true,
-                    hintText: 'Movies, series, episodes, collections, actors',
-                    style: YaruSearchFieldStyle.filledOutlined,
-                    height: 40,
-                    radius: const Radius.circular(12),
-                    contentPadding: const EdgeInsets.only(
-                      left: 14,
-                      right: 14,
-                      top: 10,
-                      bottom: 10,
-                    ),
-                    onChanged: _handleQueryChanged,
-                    onClear: () {
-                      _queryController.clear();
-                      _handleQueryChanged('');
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: _isLoading
-                        ? const Center(child: _SearchLoadingIndicator())
-                        : SingleChildScrollView(
-                            child: _buildDesktopContent(context),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1040),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Search',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Search your Jellyfin library using $_backendLabel.',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        YaruSearchField(
+                          controller: _queryController,
+                          focusNode: _focusNode,
+                          autofocus: true,
+                          hintText:
+                              'Movies, series, episodes, collections, actors',
+                          style: YaruSearchFieldStyle.filledOutlined,
+                          height: 40,
+                          radius: const Radius.circular(12),
+                          contentPadding: const EdgeInsets.only(
+                            left: 14,
+                            right: 14,
+                            top: 10,
+                            bottom: 10,
+                          ),
+                          onChanged: _handleQueryChanged,
+                          onClear: () {
+                            _queryController.clear();
+                            _handleQueryChanged('');
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+            if (_isLoading)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: _SearchLoadingIndicator()),
+              )
+            else
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: _desktopContentMaxWidth,
+                      ),
+                      child: _buildDesktopContent(context),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -218,55 +250,118 @@ class _SearchScreenState extends State<SearchScreen> {
       navigationBar: const CupertinoNavigationBar(middle: Text('Search')),
       child: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-              child: CupertinoSearchTextField(
-                controller: _queryController,
-                focusNode: _focusNode,
-                autofocus: true,
-                placeholder: 'Movies, series, episodes',
-                onChanged: _handleQueryChanged,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                child: CupertinoSearchTextField(
+                  controller: _queryController,
+                  focusNode: _focusNode,
+                  autofocus: true,
+                  placeholder: 'Movies, series, episodes',
+                  onChanged: _handleQueryChanged,
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Using $_backendLabel',
-                  style: theme.textTheme.textStyle.copyWith(
-                    fontSize: 13,
-                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Using $_backendLabel',
+                    style: theme.textTheme.textStyle.copyWith(
+                      fontSize: 13,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(
+                        context,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-            Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_isLoading)
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 16),
-                              child: Center(child: _SearchLoadingIndicator()),
-                            ),
-                          _buildCupertinoContent(context),
-                        ],
-                      ),
+            if (_isLoading)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: _SearchLoadingIndicator()),
+              )
+            else
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  child: _buildCupertinoContent(context),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileCupertinoScaffold(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+    final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+
+    return CupertinoPageScaffold(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(16, topInset + 58, 16, 98),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Search',
+                    style: theme.textTheme.navLargeTitleTextStyle,
+                  ),
+                  const SizedBox(height: 14),
+                  CupertinoSearchTextField(
+                    controller: _queryController,
+                    focusNode: _focusNode,
+                    autofocus: true,
+                    placeholder: 'Movies, series, episodes',
+                    onChanged: _handleQueryChanged,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Using $_backendLabel',
+                    style: theme.textTheme.textStyle.copyWith(
+                      fontSize: 13,
+                      color: secondary,
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  if (_isLoading)
+                    const SizedBox(
+                      height: 280,
+                      child: Center(child: _SearchLoadingIndicator()),
+                    )
+                  else
+                    _buildCupertinoContent(context),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: MobileCupertinoMediaHeader(),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: MobileCupertinoMediaNavBar(
+              selectedDestination: MobileCupertinoDestination.search,
+              onHomePressed: () => context.goNamed(AppRoutes.homeName),
+              onSearchPressed: null,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -680,44 +775,74 @@ class _DesktopSuggestionState extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Start with something specific',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'This search follows the Streamyfin plugin preference when available, then falls back to Jellyfin.',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 28),
+          child: Column(
             children: [
-              for (final suggestion in suggestions)
-                ActionChip(
-                  label: Text(suggestion),
-                  onPressed: () => onSuggestionPressed(suggestion),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(18),
                 ),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: Icon(
+                    YaruIcons.search,
+                    size: 26,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Start with something specific',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose a title, series, or actor to begin searching your library.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final suggestion in suggestions)
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: const StadiumBorder(),
+                        backgroundColor: scheme.surfaceContainerLowest,
+                        foregroundColor: scheme.onSurface,
+                        textStyle: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () => onSuggestionPressed(suggestion),
+                      child: Text(suggestion),
+                    ),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

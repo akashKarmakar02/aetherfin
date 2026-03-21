@@ -356,25 +356,7 @@ class AppSearchLoader {
           height: 420,
           quality: 84,
         ),
-      SearchArtworkKind.landscape =>
-        mediaApi.buildThumbImageUrlById(
-          itemId: item.id,
-          imageTag: item.imageTags?.thumb,
-          width: 480,
-          quality: 84,
-        ) ??
-        mediaApi.buildBackdropUrl(
-          itemId: item.id,
-          imageTag:
-              item.backdropImageTags.firstOrNull ?? item.imageTags?.backdrop,
-          width: 640,
-          quality: 84,
-        ) ??
-        mediaApi.buildPrimaryImageUrl(
-          item: item,
-          width: 420,
-          quality: 84,
-        ),
+      SearchArtworkKind.landscape => _buildLandscapeArtworkUrl(mediaApi, item),
       SearchArtworkKind.circle => mediaApi.buildPrimaryImageUrl(
           item: item,
           width: 200,
@@ -390,6 +372,60 @@ class AppSearchLoader {
       subtitle: _buildSubtitle(item),
     );
   }
+}
+
+String? _buildLandscapeArtworkUrl(
+  JellyfinMediaApi mediaApi,
+  JellyfinBaseItem item,
+) {
+  final webPrimary = mediaApi.buildPrimaryImageUrlById(
+    itemId: item.id,
+    imageTag: item.imageTags?.primary,
+    width: 480,
+    height: 270,
+    quality: 84,
+  );
+  if (webPrimary != null) {
+    return webPrimary;
+  }
+
+  final episodeThumb = mediaApi.buildThumbImageUrlById(
+    itemId: item.id,
+    imageTag: item.imageTags?.thumb,
+    width: 480,
+    quality: 84,
+  );
+  if (episodeThumb != null) {
+    return episodeThumb;
+  }
+
+  if (item.parentBackdropItemId != null && item.parentThumbImageTag != null) {
+    final parentThumb = mediaApi.buildThumbImageUrlById(
+      itemId: item.parentBackdropItemId,
+      imageTag: item.parentThumbImageTag,
+      width: 480,
+      quality: 84,
+    );
+    if (parentThumb != null) {
+      return parentThumb;
+    }
+  }
+
+  final backdrop = mediaApi.buildBackdropUrl(
+    itemId: item.id,
+    imageTag: item.backdropImageTags.firstOrNull ?? item.imageTags?.backdrop,
+    width: 640,
+    quality: 84,
+  );
+  if (backdrop != null) {
+    return backdrop;
+  }
+
+  return mediaApi.buildPrimaryImageUrl(
+    item: item,
+    width: 420,
+    quality: 84,
+  );
 }
 
 class _SearchSectionSpec {
