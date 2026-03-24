@@ -6,8 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yaru_window/yaru_window.dart';
 
+import '../../../api/api.dart';
 import '../../../app/session/app_session_scope.dart';
 import '../data/player_loader.dart';
+import '../models/player_view_data.dart';
 import '../player_controller.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -424,82 +426,194 @@ class _PlayerControlsOverlay extends StatelessWidget {
       context: context,
       backgroundColor: const Color(0xFF111214),
       barrierColor: Colors.black.withValues(alpha: 0.5),
+      showDragHandle: true,
       builder: (context) {
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Playback options',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Change audio and subtitle tracks for the current stream.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.68),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _StreamSettingsGroup(
+                  children: [
+                    _StreamSettingsEntry(
+                      icon: Icons.volume_up_rounded,
+                      title: 'Audio',
+                      subtitle: _selectedAudioLabel(viewData),
+                      onTap: () => _showAudioSelectionSheet(context),
+                    ),
+                    _StreamSettingsEntry(
+                      icon: Icons.subtitles_rounded,
+                      title: 'Subtitles',
+                      subtitle: _selectedSubtitleLabel(viewData),
+                      onTap: () => _showSubtitleSelectionSheet(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showAudioSelectionSheet(BuildContext context) async {
+    final viewData = controller.viewData;
+    if (viewData == null) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF111214),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 12),
-              ListTile(
-                title: Text(
-                  'Audio',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
+              _SelectionSheetHeader(
+                title: 'Audio',
+                subtitle: 'Choose the audio track for this playback session.',
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final stream in viewData.audioStreams)
+                      _SettingsOptionTile(
+                        label: _streamPrimaryLabel(
+                          stream,
+                          fallback: 'Audio ${stream.index ?? 0}',
+                        ),
+                        detail: _audioStreamDetail(stream),
+                        selected:
+                            controller.viewData?.selectedAudioStreamIndex ==
+                            stream.index,
+                        onTap: () async {
+                          final value = stream.index;
+                          if (value == null) {
+                            return;
+                          }
+                          Navigator.of(context).pop();
+                          await controller.selectAudioStream(value);
+                        },
+                      ),
+                  ],
                 ),
               ),
-              for (final stream in viewData.audioStreams)
-                _SettingsOptionTile(
-                  label:
-                      stream.displayTitle ??
-                      stream.title ??
-                      stream.language ??
-                      'Audio ${stream.index ?? 0}',
-                  selected:
-                      controller.viewData?.selectedAudioStreamIndex ==
-                      stream.index,
-                  onTap: () async {
-                    final value = stream.index;
-                    if (value == null) {
-                      return;
-                    }
-                    Navigator.of(context).pop();
-                    await controller.selectAudioStream(value);
-                  },
-                ),
-              const Divider(color: Colors.white24, height: 28),
-              ListTile(
-                title: Text(
-                  'Subtitles',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              _SettingsOptionTile(
-                label: 'Off',
-                selected:
-                    controller.viewData?.selectedSubtitleStreamIndex == -1,
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await controller.selectSubtitleStream(-1);
-                },
-              ),
-              for (final stream in viewData.subtitleStreams)
-                _SettingsOptionTile(
-                  label:
-                      stream.displayTitle ??
-                      stream.title ??
-                      stream.language ??
-                      'Subtitle ${stream.index ?? 0}',
-                  selected:
-                      controller.viewData?.selectedSubtitleStreamIndex ==
-                      stream.index,
-                  onTap: () async {
-                    final value = stream.index;
-                    if (value == null) {
-                      return;
-                    }
-                    Navigator.of(context).pop();
-                    await controller.selectSubtitleStream(value);
-                  },
-                ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Future<void> _showSubtitleSelectionSheet(BuildContext context) async {
+    final viewData = controller.viewData;
+    if (viewData == null) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF111214),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SelectionSheetHeader(
+                title: 'Subtitles',
+                subtitle: 'Choose subtitles for this playback session.',
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    _SettingsOptionTile(
+                      label: 'Off',
+                      detail: 'Disable subtitles',
+                      selected:
+                          controller.viewData?.selectedSubtitleStreamIndex ==
+                          -1,
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        await controller.selectSubtitleStream(-1);
+                      },
+                    ),
+                    for (final stream in viewData.subtitleStreams)
+                      _SettingsOptionTile(
+                        label: _streamPrimaryLabel(
+                          stream,
+                          fallback: 'Subtitle ${stream.index ?? 0}',
+                        ),
+                        detail: _subtitleStreamDetail(stream),
+                        selected:
+                            controller.viewData?.selectedSubtitleStreamIndex ==
+                            stream.index,
+                        onTap: () async {
+                          final value = stream.index;
+                          if (value == null) {
+                            return;
+                          }
+                          Navigator.of(context).pop();
+                          await controller.selectSubtitleStream(value);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _selectedAudioLabel(PlayerViewData viewData) {
+    final stream = viewData.audioStreams.firstWhere(
+      (entry) => entry.index == viewData.selectedAudioStreamIndex,
+      orElse: () => JellyfinMediaStreamInfo(index: viewData.selectedAudioStreamIndex),
+    );
+    return _streamPrimaryLabel(
+      stream,
+      fallback: 'Audio ${viewData.selectedAudioStreamIndex}',
+    );
+  }
+
+  String _selectedSubtitleLabel(PlayerViewData viewData) {
+    if (viewData.selectedSubtitleStreamIndex == -1) {
+      return 'Off';
+    }
+    final stream = viewData.subtitleStreams.firstWhere(
+      (entry) => entry.index == viewData.selectedSubtitleStreamIndex,
+      orElse: () =>
+          JellyfinMediaStreamInfo(index: viewData.selectedSubtitleStreamIndex),
+    );
+    return _streamPrimaryLabel(
+      stream,
+      fallback: 'Subtitle ${viewData.selectedSubtitleStreamIndex}',
     );
   }
 }
@@ -592,11 +706,13 @@ class _PlayerErrorOverlay extends StatelessWidget {
 class _SettingsOptionTile extends StatelessWidget {
   const _SettingsOptionTile({
     required this.label,
+    this.detail,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final String? detail;
   final bool selected;
   final VoidCallback onTap;
 
@@ -604,12 +720,153 @@ class _SettingsOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
       title: Text(label, style: const TextStyle(color: Colors.white)),
+      subtitle: detail == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                detail!,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.58),
+                  fontSize: 13,
+                ),
+              ),
+            ),
       trailing: selected
           ? const Icon(Icons.check_rounded, color: Colors.white)
           : null,
     );
   }
+}
+
+class _SelectionSheetHeader extends StatelessWidget {
+  const _SelectionSheetHeader({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.68),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreamSettingsGroup extends StatelessWidget {
+  const _StreamSettingsGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _StreamSettingsEntry extends StatelessWidget {
+  const _StreamSettingsEntry({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+      leading: Icon(icon, color: Colors.white.withValues(alpha: 0.9)),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          subtitle,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 13,
+          ),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: Colors.white.withValues(alpha: 0.54),
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
+String _streamPrimaryLabel(
+  JellyfinMediaStreamInfo stream, {
+  required String fallback,
+}) {
+  return stream.title ??
+      stream.language?.toUpperCase() ??
+      stream.displayTitle ??
+      fallback;
+}
+
+String _audioStreamDetail(JellyfinMediaStreamInfo stream) {
+  final parts = <String>[
+    if ((stream.displayTitle ?? '').isNotEmpty) stream.displayTitle!,
+    if ((stream.codec ?? '').isNotEmpty) stream.codec!.toUpperCase(),
+    if ((stream.channelLayout ?? '').isNotEmpty) stream.channelLayout!,
+    if (stream.isDefault) 'Default',
+  ];
+  return parts.join(' • ');
+}
+
+String _subtitleStreamDetail(JellyfinMediaStreamInfo stream) {
+  final parts = <String>[
+    if ((stream.displayTitle ?? '').isNotEmpty) stream.displayTitle!,
+    if (stream.isForced) 'Forced',
+    if (stream.isExternal) 'External',
+    if (stream.isDefault) 'Default',
+  ];
+  return parts.join(' • ');
 }
 
 String _formatDuration(Duration duration) {

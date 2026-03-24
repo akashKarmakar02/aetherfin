@@ -13,6 +13,8 @@ abstract class PlayerPlaybackAdapter extends ChangeNotifier {
     Uri uri, {
     Duration startPosition = Duration.zero,
     bool autoplay = true,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
   });
 
   Future<void> play();

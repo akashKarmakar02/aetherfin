@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:fvp/fvp.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../app/platform/app_platform.dart';
 import 'player_playback_adapter.dart';
 
 class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
@@ -42,6 +45,8 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
     Uri uri, {
     Duration startPosition = Duration.zero,
     bool autoplay = true,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
   }) async {
     final previous = _controller;
     final next = VideoPlayerController.networkUrl(uri);
@@ -49,6 +54,11 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
 
     try {
       await next.initialize();
+      await _applyLinuxTrackSelection(
+        next,
+        audioStreamIndex: audioStreamIndex,
+        subtitleStreamIndex: subtitleStreamIndex,
+      );
       if (startPosition > Duration.zero) {
         await next.seekTo(startPosition);
       }
@@ -134,5 +144,74 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
 
   void _handleControllerChanged() {
     notifyListeners();
+  }
+
+  Future<void> _applyLinuxTrackSelection(
+    VideoPlayerController controller, {
+    required int? audioStreamIndex,
+    required int? subtitleStreamIndex,
+  }) async {
+    if (currentAppPlatform != AppPlatform.linux) {
+      return;
+    }
+
+    final mediaInfo = controller.getMediaInfo();
+    final availableAudio =
+        mediaInfo?.audio?.map((entry) => entry.index).toList() ?? const <int>[];
+    final availableSubtitles =
+        mediaInfo?.subtitle?.map((entry) => entry.index).toList() ??
+        const <int>[];
+
+    if (kDebugMode) {
+      debugPrint(
+        'Linux fvp media tracks after initialize'
+        ' [audio=$availableAudio, subtitle=$availableSubtitles]',
+      );
+    }
+
+    if (audioStreamIndex != null) {
+      if (availableAudio.contains(audioStreamIndex)) {
+        controller.setAudioTracks([audioStreamIndex]);
+        if (kDebugMode) {
+          debugPrint('Linux fvp applied audio tracks: [$audioStreamIndex]');
+        }
+      } else if (kDebugMode) {
+        debugPrint(
+          'Linux fvp requested audio track missing'
+          ' [requested=$audioStreamIndex, available=$availableAudio].'
+          ' Keeping default audio selection.',
+        );
+      }
+    }
+
+    if (subtitleStreamIndex == null) {
+      return;
+    }
+
+    if (subtitleStreamIndex == -1) {
+      controller.setSubtitleTracks(const <int>[]);
+      if (kDebugMode) {
+        debugPrint('Linux fvp applied subtitle tracks: []');
+      }
+      return;
+    }
+
+    if (availableSubtitles.contains(subtitleStreamIndex)) {
+      controller.setSubtitleTracks([subtitleStreamIndex]);
+      if (kDebugMode) {
+        debugPrint('Linux fvp applied subtitle tracks: [$subtitleStreamIndex]');
+      }
+      return;
+    }
+
+    controller.setSubtitleTracks(const <int>[]);
+    if (kDebugMode) {
+      debugPrint(
+        'Linux fvp requested subtitle track missing'
+        ' [requested=$subtitleStreamIndex, available=$availableSubtitles].'
+        ' Clearing subtitle tracks instead of keeping a default subtitle.',
+      );
+      debugPrint('Linux fvp applied subtitle tracks: []');
+    }
   }
 }

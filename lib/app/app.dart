@@ -75,6 +75,10 @@ class AetherfinApp extends StatelessWidget {
                       isLoading: currentPath == AppRoutes.startupPath,
                       isSearchSelected: currentPath == AppRoutes.searchPath,
                       onHomePressed: () => router.goNamed(AppRoutes.homeName),
+                      showTitlebarOption: [
+                        "/home",
+                        "/search",
+                      ].contains(currentPath),
                       onSearchPressed: () =>
                           router.goNamed(AppRoutes.searchName),
                       onBackPressed: () {

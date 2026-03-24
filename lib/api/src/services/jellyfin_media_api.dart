@@ -417,15 +417,15 @@ class JellyfinMediaApi extends JellyfinApiBase {
     final playbackInfo = await getPlaybackInfo(
       itemId: playbackItemId,
       body: {
-        'userId': userId,
-        'deviceProfile': deviceProfile,
-        'subtitleStreamIndex': subtitleStreamIndex,
-        'startTimeTicks': startTimeTicks,
-        'isPlayback': true,
-        'autoOpenLiveStream': true,
-        'maxStreamingBitrate': maxStreamingBitrate,
-        'audioStreamIndex': audioStreamIndex,
-        'mediaSourceId': mediaSourceId,
+        'UserId': userId,
+        'DeviceProfile': deviceProfile,
+        'SubtitleStreamIndex': subtitleStreamIndex,
+        'StartTimeTicks': startTimeTicks,
+        'IsPlayback': true,
+        'AutoOpenLiveStream': true,
+        'MaxStreamingBitrate': maxStreamingBitrate,
+        'AudioStreamIndex': audioStreamIndex,
+        'MediaSourceId': mediaSourceId,
       },
     );
 
@@ -439,7 +439,7 @@ class JellyfinMediaApi extends JellyfinApiBase {
       startTimeTicks: startTimeTicks,
       maxStreamingBitrate: maxStreamingBitrate,
       userId: userId,
-      playSessionId: playSessionId,
+      playSessionId: playbackInfo.playSessionId ?? playSessionId,
     );
     return JellyfinPlaybackStreamResult(
       url: url,
@@ -462,15 +462,15 @@ class JellyfinMediaApi extends JellyfinApiBase {
     final playbackInfo = await getPlaybackInfo(
       itemId: item.id!,
       body: {
-        'userId': userId,
-        'deviceProfile': deviceProfile,
-        'subtitleStreamIndex': subtitleStreamIndex,
-        'startTimeTicks': 0,
-        'isPlayback': true,
-        'autoOpenLiveStream': true,
-        'maxStreamingBitrate': maxStreamingBitrate,
-        'audioStreamIndex': audioStreamIndex,
-        'mediaSourceId': mediaSourceId,
+        'UserId': userId,
+        'DeviceProfile': deviceProfile,
+        'SubtitleStreamIndex': subtitleStreamIndex,
+        'StartTimeTicks': 0,
+        'IsPlayback': true,
+        'AutoOpenLiveStream': true,
+        'MaxStreamingBitrate': maxStreamingBitrate,
+        'AudioStreamIndex': audioStreamIndex,
+        'MediaSourceId': mediaSourceId,
       },
     );
 
@@ -568,7 +568,7 @@ class JellyfinMediaApi extends JellyfinApiBase {
       return '${client.baseUrl}$transcodingUrl';
     }
 
-    final params = Uri(queryParameters: {
+    final params = <String, String>{
       'static': 'true',
       'container': 'mp4',
       'mediaSourceId': mediaSource?.id ?? '',
@@ -583,9 +583,11 @@ class JellyfinMediaApi extends JellyfinApiBase {
         final value? => <String, String>{'playSessionId': value},
         null => null,
       },
-    }).query;
+    };
 
-    return '${client.baseUrl}/Videos/$itemId/stream?$params';
+    final query = Uri(queryParameters: params).query;
+
+    return '${client.baseUrl}/Videos/$itemId/stream?$query';
   }
 
   String _buildDownloadPlaybackUrl({

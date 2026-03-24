@@ -112,46 +112,53 @@ class _LinuxConnectForm extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Server address',
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurfaceVariant,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Server address',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            hintText: 'https://jellyfin.example.com',
+          const SizedBox(height: 6),
+          Text(
+            'Enter the full URL of your Jellyfin server.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
-          onSubmitted: (_) {
-            if (!isBusy) {
-              onSubmit();
-            }
-          },
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Supports local and remote Jellyfin servers.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            height: 1.4,
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.url,
+            decoration: const InputDecoration(
+              hintText: 'https://jellyfin.example.com',
+            ),
+            onSubmitted: (_) {
+              if (!isBusy) {
+                onSubmit();
+              }
+            },
           ),
-        ),
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton(
+          const SizedBox(height: 10),
+          Text(
+            'Supports local and remote Jellyfin servers.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton(
             onPressed: isBusy ? null : onSubmit,
             child: Text(isBusy ? 'Connecting…' : 'Connect'),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

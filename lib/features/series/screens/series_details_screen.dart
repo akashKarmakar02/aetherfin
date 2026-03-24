@@ -566,11 +566,11 @@ class _SeriesHero extends StatelessWidget {
                         onPressed: onPrimaryAction,
                         isCupertinoMobile: isCupertinoMobile,
                       ),
-                      if (data.seriesPosterUrl != null)
-                        _GlassPosterPill(
-                          posterUrl: data.seriesPosterUrl!,
-                          title: series.name ?? 'Series',
-                        ),
+                      // if (data.seriesPosterUrl != null)
+                      //   _GlassPosterPill(
+                      //     posterUrl: data.seriesPosterUrl!,
+                      //     title: series.name ?? 'Series',
+                      //   ),
                     ],
                   ),
                 ],
@@ -714,10 +714,7 @@ class _SeasonSelector extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Text(
-            title,
-            style: const TextStyle(color: Colors.white),
-          ),
+          child: Text(title, style: const TextStyle(color: Colors.white)),
         );
       }
 
@@ -746,10 +743,7 @@ class _SeasonSelector extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
-        child: Text(
-          title,
-          style: const TextStyle(color: Colors.white),
-        ),
+        child: Text(title, style: const TextStyle(color: Colors.white)),
       );
     }
 
@@ -1036,162 +1030,173 @@ class _EpisodeMediaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const cardBorderRadius = BorderRadius.all(Radius.circular(22));
+    const footerBorderRadius = BorderRadius.vertical(
+      bottom: Radius.circular(22),
+      top: Radius.circular(16),
+    );
+    final footerHeight = isCupertinoMobile ? 104.0 : 129.0;
     final metaLine = [
       entry.subtitle,
       runtimeLabel,
     ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
     final body = RepaintBoundary(
       child: Container(
-      width: isCupertinoMobile ? 286 : 332,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1B1E),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.12),
-          width: 1,
+        width: isCupertinoMobile ? 286 : 332,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1B1E),
+          borderRadius: cardBorderRadius,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.12),
+            width: 1,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (entry.imageUrl != null)
-            Image.network(
-              entry.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.10),
-                  Colors.black.withValues(alpha: 0.34),
-                  const Color(0xFF2C3729).withValues(alpha: 0.94),
-                ],
-                stops: const [0, 0.48, 1],
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (entry.imageUrl != null)
+              Image.network(
+                entry.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.10),
+                    Colors.black.withValues(alpha: 0.34),
+                    const Color(0xFF2C3729).withValues(alpha: 0.94),
+                  ],
+                  stops: const [0, 0.48, 1],
+                ),
               ),
             ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: isCupertinoMobile ? 104 : 129,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(22),
-                top: Radius.circular(16),
-              ),
-              child: DecoratedBox(
-                // Mobile season rails stuttered with a per-card blur filter.
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(22)),
-                  color: const Color(0xFF6C756A).withValues(
-                    alpha: isCupertinoMobile ? 0.22 : 0.16,
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.02),
-                      Colors.black.withValues(alpha: isCupertinoMobile ? 0.18 : 0.12),
-                      Colors.black.withValues(alpha: isCupertinoMobile ? 0.28 : 0.22),
-                    ],
-                    stops: const [0, 0.36, 1],
-                  ),
-                ),
-                child: isCupertinoMobile
-                    ? const SizedBox.expand()
-                    : BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                        child: const SizedBox.expand(),
-                      ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: 12,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  entry.eyebrow ?? 'Episode',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.74),
-                    letterSpacing: 0.7,
-                    fontWeight: FontWeight.w500,
-                    fontSize: isCupertinoMobile ? 10.5 : 11,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  entry.title ?? 'Untitled',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      (isCupertinoMobile
-                              ? theme.textTheme.titleMedium
-                              : theme.textTheme.titleLarge)
-                          ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: isCupertinoMobile ? 13 : 15,
-                            height: 1.08,
-                            letterSpacing: -0.15,
-                          ),
-                ),
-                if ((entry.description ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    entry.description!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.84),
-                      fontSize: isCupertinoMobile ? 12.5 : 13.5,
-                      height: 1.22,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Row(
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: footerHeight,
+              child: ClipRRect(
+                borderRadius: footerBorderRadius,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Expanded(
-                      child: Text(
-                        metaLine,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.76),
-                          fontSize: isCupertinoMobile ? 11.5 : 12,
+                    if (!isCupertinoMobile)
+                      ClipRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                    DecoratedBox(
+                      // Mobile season rails stuttered with a per-card blur filter.
+                      decoration: BoxDecoration(
+                        color: const Color(
+                          0xFF6C756A,
+                        ).withValues(alpha: isCupertinoMobile ? 0.22 : 0.16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.02),
+                            Colors.black.withValues(
+                              alpha: isCupertinoMobile ? 0.18 : 0.12,
+                            ),
+                            Colors.black.withValues(
+                              alpha: isCupertinoMobile ? 0.28 : 0.22,
+                            ),
+                          ],
+                          stops: const [0, 0.36, 1],
                         ),
                       ),
                     ),
-                    if (onPlay != null) ...[
-                      const SizedBox(width: 6),
-                      _MiniPlayButton(onPressed: onPlay!),
-                    ],
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.more_horiz,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.78),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            entry.eyebrow ?? 'Episode',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.74),
+                              letterSpacing: 0.7,
+                              fontWeight: FontWeight.w500,
+                              fontSize: isCupertinoMobile ? 10.5 : 11,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            entry.title ?? 'Untitled',
+                            maxLines: isCupertinoMobile ? 2 : 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                (isCupertinoMobile
+                                        ? theme.textTheme.titleMedium
+                                        : theme.textTheme.titleLarge)
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: isCupertinoMobile ? 13 : 15,
+                                      height: 1.08,
+                                      letterSpacing: -0.15,
+                                    ),
+                          ),
+                          if ((entry.description ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              entry.description!,
+                              maxLines: isCupertinoMobile ? 2 : 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.84),
+                                fontSize: isCupertinoMobile ? 12.5 : 13.5,
+                                height: 1.22,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  metaLine,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.76),
+                                    fontSize: isCupertinoMobile ? 11.5 : 12,
+                                  ),
+                                ),
+                              ),
+                              if (onPlay != null) ...[
+                                const SizedBox(width: 6),
+                                _MiniPlayButton(onPressed: onPlay!),
+                              ],
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.more_horiz,
+                                size: 18,
+                                color: Colors.white.withValues(alpha: 0.78),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
 
@@ -1583,48 +1588,6 @@ class _GlassIconButton extends StatelessWidget {
                 : Icon(icon, color: Colors.white, size: 18),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _GlassPosterPill extends StatelessWidget {
-  const _GlassPosterPill({required this.posterUrl, required this.title});
-
-  final String posterUrl;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              posterUrl,
-              width: 34,
-              height: 44,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const SizedBox(width: 34, height: 44),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }

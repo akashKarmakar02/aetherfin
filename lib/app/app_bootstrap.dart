@@ -12,7 +12,11 @@ import 'session/app_session_controller.dart';
 Future<void> bootstrapApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
-    fvp.registerWith();
+    fvp.registerWith(
+      options: {
+        'global': {'logLevel': 'Off'},
+      },
+    );
   }
   if (currentAppPlatform == AppPlatform.linux) {
     await YaruWindowTitleBar.ensureInitialized();

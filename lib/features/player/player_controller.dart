@@ -94,6 +94,7 @@ class PlayerController extends ChangeNotifier {
         current.selectedAudioStreamIndex == audioStreamIndex) {
       return;
     }
+
     await _switchStream(
       audioStreamIndex: audioStreamIndex,
       subtitleStreamIndex: current.selectedSubtitleStreamIndex,
@@ -108,7 +109,7 @@ class PlayerController extends ChangeNotifier {
     }
     await _switchStream(
       audioStreamIndex: current.selectedAudioStreamIndex,
-      subtitleStreamIndex: subtitleStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex - 1,
     );
   }
 
@@ -174,6 +175,13 @@ class PlayerController extends ChangeNotifier {
         audioStreamIndex: audioStreamIndex,
         subtitleStreamIndex: subtitleStreamIndex,
       );
+      if (kDebugMode) {
+        debugPrint(
+          'Player stream URL after track change'
+          ' [audio=$audioStreamIndex, subtitle=$subtitleStreamIndex]: '
+          '${next.streamUrl}',
+        );
+      }
       _viewData = next;
       await _openCurrentStream(
         startPositionTicks: resumeTicks,
@@ -202,6 +210,8 @@ class PlayerController extends ChangeNotifier {
       Uri.parse(data.streamUrl),
       startPosition: _durationFromTicks(startPositionTicks),
       autoplay: true,
+      audioStreamIndex: data.selectedAudioStreamIndex - 1,
+      subtitleStreamIndex: data.selectedSubtitleStreamIndex - 1,
     );
     revealControls();
     if (reportStart) {

@@ -13,19 +13,19 @@ class PlayerLoader implements PlayerDataSource {
     required JellyfinClientInfo clientInfo,
     required String userId,
     Dio? dio,
-  })  : _userId = userId,
-        _libraryApi = JellyfinLibraryApi(
-          baseUrl: baseUrl,
-          accessToken: accessToken,
-          clientInfo: clientInfo,
-          dio: dio,
-        ),
-        _mediaApi = JellyfinMediaApi(
-          baseUrl: baseUrl,
-          accessToken: accessToken,
-          clientInfo: clientInfo,
-          dio: dio,
-        );
+  }) : _userId = userId,
+       _libraryApi = JellyfinLibraryApi(
+         baseUrl: baseUrl,
+         accessToken: accessToken,
+         clientInfo: clientInfo,
+         dio: dio,
+       ),
+       _mediaApi = JellyfinMediaApi(
+         baseUrl: baseUrl,
+         accessToken: accessToken,
+         clientInfo: clientInfo,
+         dio: dio,
+       );
 
   factory PlayerLoader.fromSession(AppSessionController session) {
     final baseUrl = session.serverUrl;
@@ -106,6 +106,9 @@ class PlayerLoader implements PlayerDataSource {
     required int? subtitleStreamIndex,
     required String? mediaSourceId,
   }) async {
+    final requestedAudioStreamIndex = audioStreamIndex ?? 0;
+    final requestedSubtitleStreamIndex = subtitleStreamIndex;
+
     final playbackInfo = await _mediaApi.getPlaybackInfo(
       itemId: item.id!,
       body: {
@@ -114,8 +117,8 @@ class PlayerLoader implements PlayerDataSource {
         'StartTimeTicks': startPositionTicks,
         'IsPlayback': true,
         'AutoOpenLiveStream': true,
-        'AudioStreamIndex': audioStreamIndex,
-        'SubtitleStreamIndex': subtitleStreamIndex,
+        'AudioStreamIndex': requestedAudioStreamIndex,
+        'SubtitleStreamIndex': requestedSubtitleStreamIndex,
         'MediaSourceId': mediaSourceId,
       },
     );
@@ -135,9 +138,9 @@ class PlayerLoader implements PlayerDataSource {
       userId: _userId,
       deviceProfile: jellyfinPlayerDeviceProfile,
       startTimeTicks: startPositionTicks,
-      mediaSourceId: mediaSource.id,
-      audioStreamIndex: resolvedAudioIndex,
-      subtitleStreamIndex: resolvedSubtitleIndex,
+      mediaSourceId: mediaSourceId,
+      audioStreamIndex: requestedAudioStreamIndex,
+      subtitleStreamIndex: requestedSubtitleStreamIndex,
     );
 
     final streamUrl = stream?.url;
@@ -219,20 +222,25 @@ class PlayerLoader implements PlayerDataSource {
 
   int _resolveInitialAudioStreamIndex(JellyfinMediaSourceInfo mediaSource) {
     return mediaSource.defaultAudioStreamIndex ??
-        mediaSource.audioStreams.firstWhere(
-          (stream) => stream.isDefault,
-          orElse: () =>
-              mediaSource.audioStreams.firstOrNull ?? JellyfinMediaStreamInfo(),
-        ).index ??
+        mediaSource.audioStreams
+            .firstWhere(
+              (stream) => stream.isDefault,
+              orElse: () =>
+                  mediaSource.audioStreams.firstOrNull ??
+                  JellyfinMediaStreamInfo(),
+            )
+            .index ??
         0;
   }
 
   int _resolveInitialSubtitleStreamIndex(JellyfinMediaSourceInfo mediaSource) {
     return mediaSource.defaultSubtitleStreamIndex ??
-        mediaSource.subtitleStreams.firstWhere(
-          (stream) => stream.isDefault,
-          orElse: () => JellyfinMediaStreamInfo(index: -1),
-        ).index ??
+        mediaSource.subtitleStreams
+            .firstWhere(
+              (stream) => stream.isDefault,
+              orElse: () => JellyfinMediaStreamInfo(index: -1),
+            )
+            .index ??
         -1;
   }
 }
