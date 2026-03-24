@@ -262,18 +262,6 @@ class _HeroCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(isMobileCupertino ? 0 : 28),
                 color: heroBackgroundColor,
-                // border: isMobileCupertino
-                //     ? null
-                //     : Border.all(color: Colors.white.withValues(alpha: 0.10)),
-                // boxShadow: isMobileCupertino
-                //     ? null
-                //     : [
-                //         BoxShadow(
-                //           color: Colors.black.withValues(alpha: 0.40),
-                //           blurRadius: 40,
-                //           offset: const Offset(0, 22),
-                //         ),
-                //       ],
               ),
               child: Stack(
                 fit: StackFit.expand,
@@ -320,6 +308,14 @@ class _HeroCard extends StatelessWidget {
                             : const [0, 0.62],
                       ),
                     ),
+                  ),
+
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: -2,
+                    height: 4,
+                    child: ColoredBox(color: Color(0xFF101315)),
                   ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(

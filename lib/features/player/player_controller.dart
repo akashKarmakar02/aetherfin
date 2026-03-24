@@ -109,7 +109,7 @@ class PlayerController extends ChangeNotifier {
     }
     await _switchStream(
       audioStreamIndex: current.selectedAudioStreamIndex,
-      subtitleStreamIndex: subtitleStreamIndex - 1,
+      subtitleStreamIndex: subtitleStreamIndex,
     );
   }
 
@@ -211,7 +211,7 @@ class PlayerController extends ChangeNotifier {
       startPosition: _durationFromTicks(startPositionTicks),
       autoplay: true,
       audioStreamIndex: data.selectedAudioStreamIndex - 1,
-      subtitleStreamIndex: data.selectedSubtitleStreamIndex - 1,
+      subtitleStreamIndex: data.selectedSubtitleStreamIndex,
     );
     revealControls();
     if (reportStart) {

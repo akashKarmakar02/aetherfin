@@ -418,166 +418,177 @@ class _SeriesHero extends StatelessWidget {
     final theme = Theme.of(context);
     final series = data.series;
 
-    return AspectRatio(
-      aspectRatio: isCupertinoMobile ? 0.82 : 16 / 8.2,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(color: const Color(0xFF0E1114)),
-            child: data.seriesBackdropUrl == null
-                ? const SizedBox.shrink()
-                : Image.network(
-                    data.seriesBackdropUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.08),
-                  Colors.black.withValues(alpha: 0.82),
-                  const Color(0xFF101315),
-                ],
-                stops: const [0.0, 0.72, 1.0],
+    return ClipRect(
+      child: AspectRatio(
+        aspectRatio: isCupertinoMobile ? 0.82 : 16 / 8.2,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(color: const Color(0xFF0E1114)),
+              child: data.seriesBackdropUrl == null
+                  ? const SizedBox.shrink()
+                  : Image.network(
+                      data.seriesBackdropUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.82),
+                    const Color(0xFF101315),
+                  ],
+                  stops: const [0.0, 0.72, 1.0],
+                ),
               ),
             ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.86),
-                  Colors.black.withValues(alpha: 0.14),
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.55, 1.0],
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.86),
+                    Colors.black.withValues(alpha: 0.14),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.55, 1.0],
+                ),
               ),
             ),
-          ),
-          if (showOverlayBackButton)
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: -2,
+              height: 4,
+              child: ColoredBox(color: Color(0xFF101315)),
+            ),
+            if (showOverlayBackButton)
+              Positioned(
+                top: MediaQuery.viewPaddingOf(context).top + 12,
+                left: isCupertinoMobile ? 12 : 20,
+                child: _GlassIconButton(
+                  icon: CupertinoIcons.back,
+                  onPressed: onBack,
+                ),
+              ),
             Positioned(
               top: MediaQuery.viewPaddingOf(context).top + 12,
-              left: isCupertinoMobile ? 12 : 20,
-              child: _GlassIconButton(
-                icon: CupertinoIcons.back,
-                onPressed: onBack,
-              ),
-            ),
-          Positioned(
-            top: MediaQuery.viewPaddingOf(context).top + 12,
-            right: isCupertinoMobile ? 12 : 20,
-            child: Row(
-              children: [
-                if (onTrailerAction != null) ...[
-                  _GlassIconButton(
-                    icon: CupertinoIcons.film,
-                    onPressed: onTrailerAction!,
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                _GlassIconButton(
-                  icon: isFavorite
-                      ? CupertinoIcons.heart_fill
-                      : CupertinoIcons.add,
-                  onPressed: onFavoriteToggle,
-                  busy: isTogglingFavorite,
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            left: isCupertinoMobile ? 16 : 38,
-            right: isCupertinoMobile ? 16 : 42,
-            bottom: isCupertinoMobile ? 24 : 34,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isCupertinoMobile ? double.infinity : 620,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              right: isCupertinoMobile ? 12 : 20,
+              child: Row(
                 children: [
-                  if (data.seriesLogoUrl != null)
-                    Image.network(
-                      data.seriesLogoUrl!,
-                      height: isCupertinoMobile ? 60 : 94,
-                      alignment: Alignment.centerLeft,
-                      errorBuilder: (_, _, _) => _HeroTitle(
+                  if (onTrailerAction != null) ...[
+                    _GlassIconButton(
+                      icon: CupertinoIcons.film,
+                      onPressed: onTrailerAction!,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  _GlassIconButton(
+                    icon: isFavorite
+                        ? CupertinoIcons.heart_fill
+                        : CupertinoIcons.add,
+                    onPressed: onFavoriteToggle,
+                    busy: isTogglingFavorite,
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: isCupertinoMobile ? 16 : 38,
+              right: isCupertinoMobile ? 16 : 42,
+              bottom: isCupertinoMobile ? 24 : 34,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isCupertinoMobile ? double.infinity : 620,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (data.seriesLogoUrl != null)
+                      Image.network(
+                        data.seriesLogoUrl!,
+                        height: isCupertinoMobile ? 60 : 94,
+                        alignment: Alignment.centerLeft,
+                        errorBuilder: (_, _, _) => _HeroTitle(
+                          text: series.name ?? 'Untitled',
+                          isCupertinoMobile: isCupertinoMobile,
+                        ),
+                      )
+                    else
+                      _HeroTitle(
                         text: series.name ?? 'Untitled',
                         isCupertinoMobile: isCupertinoMobile,
                       ),
-                    )
-                  else
-                    _HeroTitle(
-                      text: series.name ?? 'Untitled',
-                      isCupertinoMobile: isCupertinoMobile,
-                    ),
-                  const SizedBox(height: 10),
-                  Text(
-                    heroMeta,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (heroFacts.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
-                      heroFacts,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.72),
+                      heroMeta,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
-                  if ((series.overview ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Text(
-                      series.overview!,
-                      maxLines: isCupertinoMobile ? 3 : 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.94),
-                        height: 1.42,
+                    if (heroFacts.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        heroFacts,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.72),
+                        ),
                       ),
-                    ),
-                  ],
-                  if ((data.starringText ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Text(
-                      data.starringText!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.78),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _PrimaryHeroButton(
-                        label: data.hasNextUp ? 'Continue' : 'Browse Episodes',
-                        onPressed: onPrimaryAction,
-                        isCupertinoMobile: isCupertinoMobile,
-                      ),
-                      // if (data.seriesPosterUrl != null)
-                      //   _GlassPosterPill(
-                      //     posterUrl: data.seriesPosterUrl!,
-                      //     title: series.name ?? 'Series',
-                      //   ),
                     ],
-                  ),
-                ],
+                    if ((series.overview ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        series.overview!,
+                        maxLines: isCupertinoMobile ? 3 : 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.94),
+                          height: 1.42,
+                        ),
+                      ),
+                    ],
+                    if ((data.starringText ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        data.starringText!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.78),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _PrimaryHeroButton(
+                          label: data.hasNextUp
+                              ? 'Continue'
+                              : 'Browse Episodes',
+                          onPressed: onPrimaryAction,
+                          isCupertinoMobile: isCupertinoMobile,
+                        ),
+                        // if (data.seriesPosterUrl != null)
+                        //   _GlassPosterPill(
+                        //     posterUrl: data.seriesPosterUrl!,
+                        //     title: series.name ?? 'Series',
+                        //   ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1031,10 +1042,7 @@ class _EpisodeMediaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     const cardBorderRadius = BorderRadius.all(Radius.circular(22));
-    const footerBorderRadius = BorderRadius.vertical(
-      bottom: Radius.circular(22),
-      top: Radius.circular(16),
-    );
+    const footerBorderRadius = BorderRadius.vertical(top: Radius.circular(16));
     final footerHeight = isCupertinoMobile ? 104.0 : 129.0;
     final metaLine = [
       entry.subtitle,
@@ -1046,9 +1054,12 @@ class _EpisodeMediaCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1B1E),
           borderRadius: cardBorderRadius,
+        ),
+        foregroundDecoration: BoxDecoration(
+          borderRadius: cardBorderRadius,
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.12),
-            width: 1,
+            width: 2,
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -1352,8 +1363,12 @@ class _RelatedPosterCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(20),
+                  ),
+                  foregroundDecoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: Colors.white.withValues(alpha: 0.12),
+                      width: 2,
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -1408,7 +1423,13 @@ class _CastCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.06),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            foregroundDecoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+                width: 2,
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: entry.imageUrl == null
