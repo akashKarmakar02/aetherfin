@@ -22,6 +22,8 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen> {
+  static const Duration _overlayFadeDuration = Duration(milliseconds: 220);
+
   PlayerController? _controller;
   final FocusNode _focusNode = FocusNode(debugLabel: 'player_screen');
   String? _sessionKey;
@@ -96,6 +98,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 unawaited(_exitFullscreen());
               }
             },
+            const SingleActivator(LogicalKeyboardKey.space): () {
+              if (_controller != null) {
+                unawaited(_controller!.togglePlayback());
+              }
+            },
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+              if (_controller != null) {
+                unawaited(_seekBy(const Duration(seconds: -10)));
+              }
+            },
+            const SingleActivator(LogicalKeyboardKey.arrowRight): () {
+              if (_controller != null) {
+                unawaited(_seekBy(const Duration(seconds: 10)));
+              }
+            },
           },
           child: PopScope(
             canPop: !_isVideoFullscreen,
@@ -107,38 +124,38 @@ class _PlayerScreenState extends State<PlayerScreen> {
             child: Focus(
               autofocus: true,
               focusNode: _focusNode,
-              child: Material(
-                color: Colors.black,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: controller.toggleControls,
-                      child: MouseRegion(
-                        onEnter: (_) {
-                          _handlePointerActivity(controller);
-                        },
-                        onHover: (event) {
-                          _handlePointerActivity(
-                            controller,
-                            position: event.position,
-                          );
-                        },
-                        onExit: (_) {
-                          _lastPointerPosition = null;
-                        },
-                        child: Listener(
-                          onPointerDown: (event) {
-                            _handlePointerActivity(
-                              controller,
-                              position: event.position,
-                              force: true,
-                            );
-                          },
-                          onPointerSignal: (_) {
-                            _handlePointerActivity(controller, force: true);
-                          },
+              child: MouseRegion(
+                cursor: !controller.showControls
+                    ? SystemMouseCursors.none
+                    : MouseCursor.defer,
+                onEnter: (_) {
+                  _handlePointerActivity(controller);
+                },
+                onHover: (event) {
+                  _handlePointerActivity(controller, position: event.position);
+                },
+                onExit: (_) {
+                  _lastPointerPosition = null;
+                },
+                child: Listener(
+                  onPointerDown: (event) {
+                    _handlePointerActivity(
+                      controller,
+                      position: event.position,
+                      force: true,
+                    );
+                  },
+                  onPointerSignal: (_) {
+                    _handlePointerActivity(controller, force: true);
+                  },
+                  child: Material(
+                    color: Colors.black,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: controller.toggleControls,
                           child: ColoredBox(
                             color: Colors.black,
                             child: viewData == null
@@ -146,52 +163,89 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                 : controller.playbackAdapter.buildView(),
                           ),
                         ),
-                      ),
-                    ),
-                    if (controller.isLoading)
-                      const Center(child: CircularProgressIndicator()),
-                    if (controller.error != null && viewData == null)
-                      _PlayerErrorOverlay(
-                        onRetry: controller.retry,
-                        onClose: () => unawaited(_closePlayer()),
-                      ),
-                    if (controller.showControls && viewData != null)
-                      _PlayerControlsOverlay(
-                        title: title,
-                        controller: controller,
-                        isFullscreen: _isVideoFullscreen,
-                        onToggleFullscreen: _toggleFullscreen,
-                        onClose: _closePlayer,
-                      ),
-                    if (controller.message != null)
-                      Positioned(
-                        top: MediaQuery.viewPaddingOf(context).top + 20,
-                        left: 20,
-                        right: 20,
-                        child: Center(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.82),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.14),
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              child: Text(
-                                controller.message!,
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.white),
-                              ),
-                            ),
+                        if (controller.isLoading)
+                          const Center(child: CircularProgressIndicator()),
+                        if (controller.error != null && viewData == null)
+                          _PlayerErrorOverlay(
+                            onRetry: controller.retry,
+                            onClose: () => unawaited(_closePlayer()),
+                          ),
+                        IgnorePointer(
+                          ignoring:
+                              !controller.showControls || viewData == null,
+                          child: AnimatedOpacity(
+                            opacity: controller.showControls && viewData != null
+                                ? 1
+                                : 0,
+                            duration: _overlayFadeDuration,
+                            curve: Curves.easeOutCubic,
+                            child: viewData == null
+                                ? const SizedBox.shrink()
+                                : _PlayerControlsOverlay(
+                                    title: title,
+                                    controller: controller,
+                                    isFullscreen: _isVideoFullscreen,
+                                    onToggleFullscreen: _toggleFullscreen,
+                                    onClose: _closePlayer,
+                                  ),
                           ),
                         ),
-                      ),
-                  ],
+                        AnimatedSwitcher(
+                          duration: _overlayFadeDuration,
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          child: controller.message == null
+                              ? const SizedBox.shrink(
+                                  key: ValueKey('empty-player-message'),
+                                )
+                              : Positioned(
+                                  key: ValueKey(controller.message),
+                                  top:
+                                      MediaQuery.viewPaddingOf(context).top +
+                                      20,
+                                  left: 20,
+                                  right: 20,
+                                  child: Center(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.82,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.14,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
+                                        ),
+                                        child: Text(
+                                          controller.message!,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -251,6 +305,24 @@ class _PlayerScreenState extends State<PlayerScreen> {
       return;
     }
     GoRouter.of(context).pop();
+  }
+
+  Future<void> _seekBy(Duration delta) async {
+    final controller = _controller;
+    if (controller == null) {
+      return;
+    }
+
+    final nextPosition = controller.position + delta;
+    final clampedPosition = Duration(
+      milliseconds: nextPosition.inMilliseconds.clamp(
+        0,
+        controller.duration.inMilliseconds,
+      ),
+    );
+    await controller.seek(clampedPosition);
+    controller.revealControls();
+    _focusNode.requestFocus();
   }
 
   void _handlePointerActivity(
@@ -594,7 +666,8 @@ class _PlayerControlsOverlay extends StatelessWidget {
   String _selectedAudioLabel(PlayerViewData viewData) {
     final stream = viewData.audioStreams.firstWhere(
       (entry) => entry.index == viewData.selectedAudioStreamIndex,
-      orElse: () => JellyfinMediaStreamInfo(index: viewData.selectedAudioStreamIndex),
+      orElse: () =>
+          JellyfinMediaStreamInfo(index: viewData.selectedAudioStreamIndex),
     );
     return _streamPrimaryLabel(
       stream,
@@ -742,10 +815,7 @@ class _SettingsOptionTile extends StatelessWidget {
 }
 
 class _SelectionSheetHeader extends StatelessWidget {
-  const _SelectionSheetHeader({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SelectionSheetHeader({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;

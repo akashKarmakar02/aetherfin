@@ -271,6 +271,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                       heroMeta: heroMeta,
                       heroFacts: heroFacts,
                       isCupertinoMobile: isCupertinoMobile,
+                      isLinuxDesktop: isLinuxDesktop,
                       showOverlayBackButton: !isLinuxDesktop,
                       isFavorite: _isFavorite,
                       isTogglingFavorite: _isTogglingFavorite,
@@ -392,6 +393,7 @@ class _SeriesHero extends StatelessWidget {
     required this.heroMeta,
     required this.heroFacts,
     required this.isCupertinoMobile,
+    required this.isLinuxDesktop,
     required this.showOverlayBackButton,
     required this.isFavorite,
     required this.isTogglingFavorite,
@@ -405,6 +407,7 @@ class _SeriesHero extends StatelessWidget {
   final String heroMeta;
   final String heroFacts;
   final bool isCupertinoMobile;
+  final bool isLinuxDesktop;
   final bool showOverlayBackButton;
   final bool isFavorite;
   final bool isTogglingFavorite;
@@ -417,6 +420,8 @@ class _SeriesHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final series = data.series;
+    final topControlInset = MediaQuery.viewPaddingOf(context).top +
+        (isLinuxDesktop ? kYaruTitleBarHeight + 12 : 12);
 
     return ClipRect(
       child: AspectRatio(
@@ -471,7 +476,7 @@ class _SeriesHero extends StatelessWidget {
             ),
             if (showOverlayBackButton)
               Positioned(
-                top: MediaQuery.viewPaddingOf(context).top + 12,
+                top: topControlInset,
                 left: isCupertinoMobile ? 12 : 20,
                 child: _GlassIconButton(
                   icon: CupertinoIcons.back,
@@ -479,7 +484,7 @@ class _SeriesHero extends StatelessWidget {
                 ),
               ),
             Positioned(
-              top: MediaQuery.viewPaddingOf(context).top + 12,
+              top: topControlInset,
               right: isCupertinoMobile ? 12 : 20,
               child: Row(
                 children: [

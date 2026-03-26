@@ -70,6 +70,8 @@ class AetherfinApp extends StatelessWidget {
                     }
                     return LinuxWindowShell(
                       enableTray: enableLinuxTray,
+                      extendBodyBehindTitleBar:
+                          currentPath.startsWith('/series/'),
                       showBackButton: currentPath.startsWith('/series/'),
                       isHomeSelected: currentPath == AppRoutes.homePath,
                       isLoading: currentPath == AppRoutes.startupPath,

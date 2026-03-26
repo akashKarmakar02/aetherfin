@@ -9,6 +9,7 @@ class LinuxWindowShell extends StatefulWidget {
     super.key,
     required this.child,
     this.showBackButton = false,
+    this.extendBodyBehindTitleBar = false,
     this.onBackPressed,
     this.isHomeSelected = false,
     this.isSearchSelected = false,
@@ -21,6 +22,7 @@ class LinuxWindowShell extends StatefulWidget {
 
   final Widget child;
   final bool showBackButton;
+  final bool extendBodyBehindTitleBar;
   final VoidCallback? onBackPressed;
   final bool isHomeSelected;
   final bool isSearchSelected;
@@ -87,66 +89,90 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: YaruWindowTitleBar(
-        backgroundColor: scheme.surface,
-        border: BorderSide.none,
-        centerTitle: true,
-        leading: widget.showBackButton
-            ? Padding(
-                padding: const EdgeInsets.only(left: 0),
-                child: Center(
-                  child: Semantics(
-                    label: 'Back',
-                    button: true,
-                    child: SizedBox(
-                      width: 34,
-                      height: 34,
-                      child: Material(
-                        // color: scheme.onSurface.withValues(alpha: 0.06),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: widget.onBackPressed,
-                          child: Icon(
-                            YaruIcons.go_previous,
-                            size: 18,
-                            color: scheme.onSurface,
-                          ),
+    final titleBar = YaruWindowTitleBar(
+      backgroundColor: widget.extendBodyBehindTitleBar
+          ? Colors.transparent
+          : scheme.surface,
+      border: BorderSide.none,
+      centerTitle: true,
+      leading: widget.showBackButton
+          ? Padding(
+              padding: const EdgeInsets.only(left: 0),
+              child: Center(
+                child: Semantics(
+                  label: 'Back',
+                  button: true,
+                  child: SizedBox(
+                    width: 34,
+                    height: 34,
+                    child: Material(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: widget.onBackPressed,
+                        child: Icon(
+                          YaruIcons.go_previous,
+                          size: 18,
+                          color: scheme.onSurface,
                         ),
                       ),
                     ),
                   ),
                 ),
-              )
-            : null,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 3,
-          children: widget.showTitlebarOption
-              ? [
-                  SizedBox(width: 56),
-                  _LinuxTitleBarActionButton(
-                    icon: YaruIcons.home_filled,
-                    label: 'Home',
-                    selected: widget.isHomeSelected,
-                    onPressed: widget.onHomePressed,
-                  ),
-                  _LinuxTitleBarActionButton(
-                    icon: CupertinoIcons.search,
-                    label: 'Search',
-                    selected: widget.isSearchSelected,
-                    onPressed: widget.onSearchPressed,
-                  ),
-                ]
-              : [],
-        ),
+              ),
+            )
+          : null,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 3,
+        children: widget.showTitlebarOption
+            ? [
+                SizedBox(width: 56),
+                _LinuxTitleBarActionButton(
+                  icon: YaruIcons.home_filled,
+                  label: 'Home',
+                  selected: widget.isHomeSelected,
+                  onPressed: widget.onHomePressed,
+                ),
+                _LinuxTitleBarActionButton(
+                  icon: CupertinoIcons.search,
+                  label: 'Search',
+                  selected: widget.isSearchSelected,
+                  onPressed: widget.onSearchPressed,
+                ),
+              ]
+            : [],
       ),
-      body: ColoredBox(color: scheme.surface, child: widget.child),
+    );
+    final body = ColoredBox(color: scheme.surface, child: widget.child);
+
+    return ColoredBox(
+      color: scheme.surface,
+      child: widget.extendBodyBehindTitleBar
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                body,
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    height: kYaruTitleBarHeight,
+                    child: titleBar,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                SizedBox(
+                  height: kYaruTitleBarHeight,
+                  child: titleBar,
+                ),
+                Expanded(child: body),
+              ],
+            ),
     );
   }
 }
