@@ -145,8 +145,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMobileCupertino =
-            _isCupertino && constraints.maxWidth < 700;
+        final isMobileCupertino = _isCupertino && constraints.maxWidth < 700;
         if (isMobileCupertino) {
           return _buildMobileCupertinoScaffold(context);
         }
@@ -313,10 +312,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Search',
-                    style: theme.textTheme.navLargeTitleTextStyle,
-                  ),
+                  Text('Search', style: theme.textTheme.navLargeTitleTextStyle),
                   const SizedBox(height: 14),
                   CupertinoSearchTextField(
                     controller: _queryController,
@@ -607,6 +603,7 @@ class _CupertinoSearchSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
+    final sectionHeight = _cupertinoSectionHeight(context, section);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -620,7 +617,7 @@ class _CupertinoSearchSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 228,
+          height: sectionHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: section.entries.length,
@@ -643,7 +640,20 @@ class _CupertinoSearchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
     final onTap = _tapHandler(context, entry.item);
+    final subtitle = entry.subtitle;
+    final hasSubtitle = (subtitle ?? '').isNotEmpty;
+    final titleStyle = theme.textTheme.textStyle.copyWith(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+    );
+    final subtitleStyle = theme.textTheme.textStyle.copyWith(
+      fontSize: 12,
+      height: 1.2,
+      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+    );
     final width = switch (entry.artworkKind) {
       SearchArtworkKind.poster => 124.0,
       SearchArtworkKind.landscape => 196.0,
@@ -663,32 +673,83 @@ class _CupertinoSearchCard extends StatelessWidget {
               desktop: false,
             ),
             const SizedBox(height: 10),
-            Text(
-              entry.item.name ?? 'Untitled',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.textStyle.copyWith(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: textScaler.scale(15) * 1.2 * 2,
+                    child: Text(
+                      entry.item.name ?? 'Untitled',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
+                    ),
+                  ),
+                  if (hasSubtitle) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: subtitleStyle,
+                    ),
+                  ],
+                ],
               ),
             ),
-            if ((entry.subtitle ?? '').isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                entry.subtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.textStyle.copyWith(
-                  fontSize: 12,
-                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
   }
+}
+
+double _cupertinoSectionHeight(
+  BuildContext context,
+  SearchSectionViewData section,
+) {
+  const titleFontSize = 15.0;
+  const titleLineHeight = 1.2;
+  const subtitleFontSize = 12.0;
+  const subtitleLineHeight = 1.2;
+  const artworkGap = 10.0;
+  const subtitleGap = 4.0;
+  const minimumHeight = 228.0;
+  const bottomAllowance = 4.0;
+
+  final textScaler = MediaQuery.textScalerOf(context);
+  var artworkHeight = 0.0;
+  var hasSubtitle = false;
+
+  for (final entry in section.entries) {
+    final nextArtworkHeight = _searchArtworkSize(
+      artworkKind: entry.artworkKind,
+      desktop: false,
+    ).height;
+    if (nextArtworkHeight > artworkHeight) {
+      artworkHeight = nextArtworkHeight;
+    }
+    hasSubtitle = hasSubtitle || (entry.subtitle ?? '').isNotEmpty;
+  }
+
+  if (artworkHeight == 0) {
+    return minimumHeight;
+  }
+
+  final titleHeight = textScaler.scale(titleFontSize) * titleLineHeight * 2;
+  final subtitleHeight = hasSubtitle
+      ? textScaler.scale(subtitleFontSize) * subtitleLineHeight
+      : 0;
+  final totalHeight =
+      artworkHeight +
+      artworkGap +
+      titleHeight +
+      subtitleHeight +
+      (hasSubtitle ? subtitleGap : 0) +
+      bottomAllowance;
+
+  return totalHeight < minimumHeight ? minimumHeight : totalHeight;
 }
 
 class _SearchArtwork extends StatelessWidget {
@@ -704,14 +765,7 @@ class _SearchArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = switch ((desktop, artworkKind)) {
-      (true, SearchArtworkKind.poster) => const Size(54, 82),
-      (true, SearchArtworkKind.landscape) => const Size(104, 58),
-      (true, SearchArtworkKind.circle) => const Size(52, 52),
-      (false, SearchArtworkKind.poster) => const Size(124, 178),
-      (false, SearchArtworkKind.landscape) => const Size(196, 110),
-      (false, SearchArtworkKind.circle) => const Size(96, 96),
-    };
+    final size = _searchArtworkSize(artworkKind: artworkKind, desktop: desktop);
     final borderRadius = switch (artworkKind) {
       SearchArtworkKind.poster => BorderRadius.circular(desktop ? 12 : 18),
       SearchArtworkKind.landscape => BorderRadius.circular(desktop ? 12 : 16),
@@ -742,6 +796,20 @@ class _SearchArtwork extends StatelessWidget {
     }
     return CupertinoColors.tertiarySystemFill.resolveFrom(context);
   }
+}
+
+Size _searchArtworkSize({
+  required SearchArtworkKind artworkKind,
+  required bool desktop,
+}) {
+  return switch ((desktop, artworkKind)) {
+    (true, SearchArtworkKind.poster) => const Size(54, 82),
+    (true, SearchArtworkKind.landscape) => const Size(104, 58),
+    (true, SearchArtworkKind.circle) => const Size(52, 52),
+    (false, SearchArtworkKind.poster) => const Size(124, 178),
+    (false, SearchArtworkKind.landscape) => const Size(196, 110),
+    (false, SearchArtworkKind.circle) => const Size(96, 96),
+  };
 }
 
 class _ArtworkPlaceholder extends StatelessWidget {

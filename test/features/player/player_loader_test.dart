@@ -1,4 +1,5 @@
 import 'package:aetherfin/api/api.dart';
+import 'package:aetherfin/app/platform/app_platform.dart';
 import 'package:aetherfin/features/player/data/player_loader.dart';
 import 'package:aetherfin/features/player/models/player_view_data.dart';
 import 'package:dio/dio.dart';
@@ -133,9 +134,75 @@ void main() {
 
       expect(data.selectedAudioStreamIndex, 1);
       expect(data.selectedSubtitleStreamIndex, -1);
+      expect(data.externalSubtitleUrl, isNull);
       expect(data.streamUrl, contains('audioStreamIndex=1'));
       expect(data.streamUrl, contains('subtitleStreamIndex=-1'));
       expect(data.streamUrl, contains('startTimeTicks=120000000'));
     });
+
+    test('builds linux external ass subtitle fallback for ass tracks', () async {
+      debugAppPlatformOverride = AppPlatform.linux;
+      addTearDown(() => debugAppPlatformOverride = null);
+
+      final adapter = FakeHttpClientAdapter();
+      final dio = Dio()..httpClientAdapter = adapter;
+      adapter.onRequest(
+        (options) =>
+            options.method == 'POST' &&
+            options.path == '/Items/episode-3/PlaybackInfo',
+        (_) {
+          return jsonResponse(
+            const <String, dynamic>{
+              'PlaySessionId': 'play-episode-3',
+              'MediaSources': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'Id': 'source-3',
+                  'Container': 'mkv',
+                  'MediaStreams': <Map<String, dynamic>>[
+                    <String, dynamic>{'Index': 1, 'Type': 'Audio'},
+                    <String, dynamic>{
+                      'Index': 6,
+                      'Type': 'Subtitle',
+                      'Codec': 'ass',
+                    },
+                  ],
+                },
+              ],
+            },
+          );
+        },
+      );
+
+      final loader = PlayerLoader(
+        baseUrl: 'https://jellyfin.local',
+        accessToken: 'token',
+        clientInfo: _clientInfo,
+        userId: 'user-1',
+        dio: dio,
+      );
+      final current = PlayerViewData(
+        requestedItemId: 'episode-3',
+        item: JellyfinBaseItem(id: 'episode-3', type: 'Episode'),
+        streamUrl: 'https://old',
+        mediaSource: JellyfinMediaSourceInfo(id: 'source-3'),
+        playSessionId: 'play-old',
+        startPositionTicks: 0,
+        selectedAudioStreamIndex: 0,
+        selectedSubtitleStreamIndex: -1,
+      );
+
+      final data = await loader.reloadStream(
+        current: current,
+        startPositionTicks: 0,
+        audioStreamIndex: 1,
+        subtitleStreamIndex: 6,
+      );
+
+      expect(
+        data.externalSubtitleUrl,
+        'https://jellyfin.local/Videos/episode-3/source-3/Subtitles/6/Stream.ass?api_key=token',
+      );
+    });
+
   });
 }

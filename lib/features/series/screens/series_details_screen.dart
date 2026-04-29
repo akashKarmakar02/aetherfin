@@ -420,7 +420,8 @@ class _SeriesHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final series = data.series;
-    final topControlInset = MediaQuery.viewPaddingOf(context).top +
+    final topControlInset =
+        MediaQuery.viewPaddingOf(context).top +
         (isLinuxDesktop ? kYaruTitleBarHeight + 12 : 12);
 
     return ClipRect(
@@ -904,8 +905,13 @@ class _EpisodesRail extends StatelessWidget {
       );
     }
 
+    final railHeight = _episodeRailHeight(
+      context,
+      isCupertinoMobile: isCupertinoMobile,
+    );
+
     return SizedBox(
-      height: isCupertinoMobile ? 214 : 238,
+      height: railHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: entries.length,
@@ -940,8 +946,13 @@ class _EpisodeMediaRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final railHeight = _episodeRailHeight(
+      context,
+      isCupertinoMobile: isCupertinoMobile,
+    );
+
     return SizedBox(
-      height: isCupertinoMobile ? 214 : 238,
+      height: railHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: entries.length,
@@ -1048,7 +1059,20 @@ class _EpisodeMediaCard extends StatelessWidget {
     final theme = Theme.of(context);
     const cardBorderRadius = BorderRadius.all(Radius.circular(22));
     const footerBorderRadius = BorderRadius.vertical(top: Radius.circular(16));
-    final footerHeight = isCupertinoMobile ? 104.0 : 129.0;
+    final footerPadding = isCupertinoMobile
+        ? const EdgeInsets.fromLTRB(12, 6, 12, 8)
+        : const EdgeInsets.fromLTRB(14, 10, 14, 12);
+    final eyebrowFontSize = isCupertinoMobile ? 9.5 : 11.0;
+    final titleFontSize = isCupertinoMobile ? 12.0 : 15.0;
+    final descriptionFontSize = isCupertinoMobile ? 11.0 : 13.5;
+    final metaFontSize = isCupertinoMobile ? 10.5 : 12.0;
+    final titleLineHeight = isCupertinoMobile ? 0.98 : 1.08;
+    final descriptionLineHeight = isCupertinoMobile ? 1.08 : 1.22;
+    final footerHeight = _episodeCardFooterHeight(
+      context,
+      isCupertinoMobile: isCupertinoMobile,
+      hasDescription: (entry.description ?? '').isNotEmpty,
+    );
     final metaLine = [
       entry.subtitle,
       runtimeLabel,
@@ -1131,7 +1155,7 @@ class _EpisodeMediaCard extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                      padding: footerPadding,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -1145,13 +1169,13 @@ class _EpisodeMediaCard extends StatelessWidget {
                               color: Colors.white.withValues(alpha: 0.74),
                               letterSpacing: 0.7,
                               fontWeight: FontWeight.w500,
-                              fontSize: isCupertinoMobile ? 10.5 : 11,
+                              fontSize: eyebrowFontSize,
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          SizedBox(height: isCupertinoMobile ? 1 : 3),
                           Text(
                             entry.title ?? 'Untitled',
-                            maxLines: isCupertinoMobile ? 2 : 1,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style:
                                 (isCupertinoMobile
@@ -1160,25 +1184,25 @@ class _EpisodeMediaCard extends StatelessWidget {
                                     ?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: isCupertinoMobile ? 13 : 15,
-                                      height: 1.08,
+                                      fontSize: titleFontSize,
+                                      height: titleLineHeight,
                                       letterSpacing: -0.15,
                                     ),
                           ),
                           if ((entry.description ?? '').isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            SizedBox(height: isCupertinoMobile ? 1 : 4),
                             Text(
                               entry.description!,
-                              maxLines: isCupertinoMobile ? 2 : 1,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.84),
-                                fontSize: isCupertinoMobile ? 12.5 : 13.5,
-                                height: 1.22,
+                                fontSize: descriptionFontSize,
+                                height: descriptionLineHeight,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 8),
+                          SizedBox(height: isCupertinoMobile ? 4 : 8),
                           Row(
                             children: [
                               Expanded(
@@ -1188,18 +1212,21 @@ class _EpisodeMediaCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: Colors.white.withValues(alpha: 0.76),
-                                    fontSize: isCupertinoMobile ? 11.5 : 12,
+                                    fontSize: metaFontSize,
                                   ),
                                 ),
                               ),
                               if (onPlay != null) ...[
-                                const SizedBox(width: 6),
-                                _MiniPlayButton(onPressed: onPlay!),
+                                SizedBox(width: isCupertinoMobile ? 4 : 6),
+                                _MiniPlayButton(
+                                  onPressed: onPlay!,
+                                  compact: isCupertinoMobile,
+                                ),
                               ],
-                              const SizedBox(width: 8),
+                              SizedBox(width: isCupertinoMobile ? 6 : 8),
                               Icon(
                                 Icons.more_horiz,
-                                size: 18,
+                                size: isCupertinoMobile ? 17 : 18,
                                 color: Colors.white.withValues(alpha: 0.78),
                               ),
                             ],
@@ -1620,9 +1647,10 @@ class _GlassIconButton extends StatelessWidget {
 }
 
 class _MiniPlayButton extends StatelessWidget {
-  const _MiniPlayButton({required this.onPressed});
+  const _MiniPlayButton({required this.onPressed, this.compact = false});
 
   final VoidCallback onPressed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -1630,13 +1658,39 @@ class _MiniPlayButton extends StatelessWidget {
       style: IconButton.styleFrom(
         backgroundColor: Colors.white.withValues(alpha: 0.14),
         foregroundColor: Colors.white,
-        minimumSize: const Size(34, 34),
+        minimumSize: compact ? const Size(30, 30) : const Size(34, 34),
         padding: EdgeInsets.zero,
       ),
       onPressed: onPressed,
-      icon: const Icon(CupertinoIcons.play_fill, size: 16),
+      icon: Icon(CupertinoIcons.play_fill, size: compact ? 14 : 16),
     );
   }
+}
+
+double _episodeRailHeight(
+  BuildContext context, {
+  required bool isCupertinoMobile,
+}) {
+  if (!isCupertinoMobile) {
+    return 238;
+  }
+
+  final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.4);
+  return 220 + ((textScale - 1) * 18);
+}
+
+double _episodeCardFooterHeight(
+  BuildContext context, {
+  required bool isCupertinoMobile,
+  required bool hasDescription,
+}) {
+  if (!isCupertinoMobile) {
+    return 129;
+  }
+
+  final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.4);
+  final baseHeight = hasDescription ? 108.0 : 90.0;
+  return baseHeight + ((textScale - 1) * 10);
 }
 
 class _EmptySectionCopy extends StatelessWidget {

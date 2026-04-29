@@ -15,6 +15,7 @@ abstract class PlayerPlaybackAdapter extends ChangeNotifier {
     bool autoplay = true,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
+    String? externalSubtitleUrl,
   });
 
   Future<void> play();

@@ -641,6 +641,28 @@ class JellyfinMediaApi extends JellyfinApiBase {
     return uri.replace(queryParameters: params).toString();
   }
 
+  String? buildSubtitleStreamUrl({
+    required String itemId,
+    required JellyfinMediaSourceInfo mediaSource,
+    required JellyfinMediaStreamInfo subtitleStream,
+    String format = 'ass',
+  }) {
+    final subtitleIndex = subtitleStream.index;
+    final mediaSourceId = mediaSource.id;
+    if (subtitleIndex == null || mediaSourceId == null || mediaSourceId.isEmpty) {
+      return null;
+    }
+
+    final params = <String, String>{
+      if (accessToken != null && accessToken!.isNotEmpty)
+        'api_key': accessToken!,
+    };
+    final query = Uri(queryParameters: params).query;
+    return buildUrl(
+      '/Videos/$itemId/$mediaSourceId/Subtitles/$subtitleIndex/Stream.$format${query.isEmpty ? '' : '?$query'}',
+    );
+  }
+
   int? _toInt(Object? value) {
     if (value is int) return value;
     if (value is num) return value.toInt();

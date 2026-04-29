@@ -72,13 +72,19 @@ class AetherfinApp extends StatelessWidget {
                       enableTray: enableLinuxTray,
                       extendBodyBehindTitleBar:
                           currentPath.startsWith('/series/'),
-                      showBackButton: currentPath.startsWith('/series/'),
+                      showBackButton:
+                          currentPath.startsWith('/series/') ||
+                          currentPath.startsWith('/library/'),
                       isHomeSelected: currentPath == AppRoutes.homePath,
+                      isLibrarySelected: currentPath == AppRoutes.libraryPath,
                       isLoading: currentPath == AppRoutes.startupPath,
                       isSearchSelected: currentPath == AppRoutes.searchPath,
                       onHomePressed: () => router.goNamed(AppRoutes.homeName),
+                      onLibraryPressed: () =>
+                          router.goNamed(AppRoutes.libraryName),
                       showTitlebarOption: [
                         "/home",
+                        "/library",
                         "/search",
                       ].contains(currentPath),
                       onSearchPressed: () =>

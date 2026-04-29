@@ -5,6 +5,7 @@ class PlayerViewData {
     required this.requestedItemId,
     required this.item,
     required this.streamUrl,
+    this.externalSubtitleUrl,
     required this.mediaSource,
     required this.playSessionId,
     required this.startPositionTicks,
@@ -15,6 +16,7 @@ class PlayerViewData {
   final String requestedItemId;
   final JellyfinBaseItem item;
   final String streamUrl;
+  final String? externalSubtitleUrl;
   final JellyfinMediaSourceInfo mediaSource;
   final String? playSessionId;
   final int startPositionTicks;
@@ -28,6 +30,7 @@ class PlayerViewData {
 
   PlayerViewData copyWith({
     String? streamUrl,
+    String? externalSubtitleUrl,
     JellyfinMediaSourceInfo? mediaSource,
     String? playSessionId,
     int? startPositionTicks,
@@ -38,6 +41,7 @@ class PlayerViewData {
       requestedItemId: requestedItemId,
       item: item,
       streamUrl: streamUrl ?? this.streamUrl,
+      externalSubtitleUrl: externalSubtitleUrl ?? this.externalSubtitleUrl,
       mediaSource: mediaSource ?? this.mediaSource,
       playSessionId: playSessionId ?? this.playSessionId,
       startPositionTicks: startPositionTicks ?? this.startPositionTicks,

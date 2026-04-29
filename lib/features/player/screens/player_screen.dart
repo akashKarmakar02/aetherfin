@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:yaru_window/yaru_window.dart';
 
 import '../../../api/api.dart';
+import '../../../app/platform/app_platform.dart';
 import '../../../app/session/app_session_scope.dart';
 import '../data/player_loader.dart';
 import '../models/player_view_data.dart';
@@ -494,11 +496,8 @@ class _PlayerControlsOverlay extends StatelessWidget {
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF111214),
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      showDragHandle: true,
+    await _showPlayerSheet(
+      context,
       builder: (context) {
         return SafeArea(
           child: Padding(
@@ -552,11 +551,8 @@ class _PlayerControlsOverlay extends StatelessWidget {
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF111214),
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      showDragHandle: true,
+    await _showPlayerSheet(
+      context,
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -605,11 +601,8 @@ class _PlayerControlsOverlay extends StatelessWidget {
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF111214),
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      showDragHandle: true,
+    await _showPlayerSheet(
+      context,
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -660,6 +653,51 @@ class _PlayerControlsOverlay extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _showPlayerSheet(
+    BuildContext context, {
+    required WidgetBuilder builder,
+  }) {
+    final navigatorContext = Navigator.of(context, rootNavigator: true).context;
+    if (currentAppPlatform == AppPlatform.cupertino) {
+      return showCupertinoModalPopup<void>(
+        context: navigatorContext,
+        barrierColor: Colors.black.withValues(alpha: 0.5),
+        builder: (context) {
+          return Material(
+            type: MaterialType.transparency,
+            child: SafeArea(
+              top: false,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF111214),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                    ),
+                    child: builder(context),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    return showModalBottomSheet<void>(
+      context: navigatorContext,
+      useRootNavigator: true,
+      backgroundColor: const Color(0xFF111214),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      showDragHandle: true,
+      builder: builder,
     );
   }
 

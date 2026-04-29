@@ -9,6 +9,8 @@ import 'playback/player_playback_adapter.dart';
 import 'playback/video_player_playback_adapter.dart';
 
 class PlayerController extends ChangeNotifier {
+  static const Duration _positionUiUpdateInterval = Duration(milliseconds: 250);
+
   PlayerController({
     required this.itemId,
     required PlayerDataSource loader,
@@ -32,6 +34,7 @@ class PlayerController extends ChangeNotifier {
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
+  Duration _lastUiNotifiedPosition = Duration.zero;
   bool _didSendStarted = false;
   bool _isClosed = false;
 
@@ -84,6 +87,7 @@ class PlayerController extends ChangeNotifier {
   Future<void> seek(Duration nextPosition) async {
     await _playbackAdapter.seekTo(nextPosition);
     _position = nextPosition;
+    _lastUiNotifiedPosition = nextPosition;
     notifyListeners();
     await _reportProgress();
   }
@@ -212,6 +216,7 @@ class PlayerController extends ChangeNotifier {
       autoplay: true,
       audioStreamIndex: data.selectedAudioStreamIndex - 1,
       subtitleStreamIndex: data.selectedSubtitleStreamIndex,
+      externalSubtitleUrl: data.externalSubtitleUrl,
     );
     revealControls();
     if (reportStart) {
@@ -221,6 +226,9 @@ class PlayerController extends ChangeNotifier {
 
   void _handlePlaybackChanged() {
     final wasPlaying = _isPlaying;
+    final previousDuration = _duration;
+    final previousPosition = _position;
+    final previousMessage = _message;
     _isPlaying = _playbackAdapter.isPlaying;
     _position = _playbackAdapter.position;
     _duration = _playbackAdapter.duration;
@@ -235,7 +243,23 @@ class PlayerController extends ChangeNotifier {
       revealControls();
       return;
     }
-    notifyListeners();
+
+    final shouldNotifyForPosition =
+        _showControls &&
+        _position != previousPosition &&
+        (_position - _lastUiNotifiedPosition).abs() >=
+            _positionUiUpdateInterval;
+
+    if (shouldNotifyForPosition) {
+      _lastUiNotifiedPosition = _position;
+    }
+
+    if (_isPlaying != wasPlaying ||
+        _duration != previousDuration ||
+        _message != previousMessage ||
+        shouldNotifyForPosition) {
+      notifyListeners();
+    }
   }
 
   void _scheduleControlsHide() {

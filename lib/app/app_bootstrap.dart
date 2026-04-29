@@ -14,6 +14,7 @@ Future<void> bootstrapApp() async {
   if (!kIsWeb) {
     fvp.registerWith(
       options: {
+        'platforms': ['linux', 'macos', 'windows'],
         'global': {'logLevel': 'Off'},
       },
     );

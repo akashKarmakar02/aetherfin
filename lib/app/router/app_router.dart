@@ -4,6 +4,8 @@ import '../../features/auth/screens/connect_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/startup_screen.dart';
 import '../../features/home/screens/home_screen.dart';
+import '../../features/library/screens/library_collection_screen.dart';
+import '../../features/library/screens/library_screen.dart';
 import '../../features/player/screens/player_screen.dart';
 import '../../features/search/screens/search_screen.dart';
 import '../../features/series/screens/series_details_screen.dart';
@@ -18,7 +20,9 @@ GoRouter createAppRouter(AppSessionController sessionController) {
       if (sessionController.phase == AppSessionPhase.loggedIn) {
         final path = state.uri.path;
         if (path == AppRoutes.homePath ||
+            path == AppRoutes.libraryPath ||
             path == AppRoutes.searchPath ||
+            path.startsWith('/library/') ||
             path.startsWith('/series/') ||
             path.startsWith('/player/')) {
           return null;
@@ -52,6 +56,18 @@ GoRouter createAppRouter(AppSessionController sessionController) {
         path: AppRoutes.homePath,
         name: AppRoutes.homeName,
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.libraryPath,
+        name: AppRoutes.libraryName,
+        builder: (context, state) => const LibraryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.libraryCollectionPath,
+        name: AppRoutes.libraryCollectionName,
+        builder: (context, state) => LibraryCollectionScreen(
+          libraryId: state.pathParameters['id'] ?? '',
+        ),
       ),
       GoRoute(
         path: AppRoutes.searchPath,

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../api/api.dart';
+import '../../../app/platform/app_platform.dart';
 import '../../../app/session/app_session_controller.dart';
 import '../models/player_view_data.dart';
 import 'jellyfin_player_device_profile.dart';
@@ -148,11 +149,19 @@ class PlayerLoader implements PlayerDataSource {
       throw StateError('Jellyfin did not return a playback URL.');
     }
 
+    final resolvedMediaSource = stream?.mediaSource ?? mediaSource;
+    final externalSubtitleUrl = _resolveExternalSubtitleUrl(
+      itemId: item.id!,
+      mediaSource: resolvedMediaSource,
+      subtitleStreamIndex: resolvedSubtitleIndex,
+    );
+
     return PlayerViewData(
       requestedItemId: requestedItemId,
       item: item,
       streamUrl: streamUrl,
-      mediaSource: stream?.mediaSource ?? mediaSource,
+      externalSubtitleUrl: externalSubtitleUrl,
+      mediaSource: resolvedMediaSource,
       playSessionId: stream?.sessionId ?? playbackInfo.playSessionId,
       startPositionTicks: startPositionTicks,
       selectedAudioStreamIndex: resolvedAudioIndex,
@@ -242,5 +251,31 @@ class PlayerLoader implements PlayerDataSource {
             )
             .index ??
         -1;
+  }
+
+  String? _resolveExternalSubtitleUrl({
+    required String itemId,
+    required JellyfinMediaSourceInfo mediaSource,
+    required int subtitleStreamIndex,
+  }) {
+    if (currentAppPlatform != AppPlatform.linux || subtitleStreamIndex < 0) {
+      return null;
+    }
+
+    final subtitleStream = mediaSource.subtitleStreams.firstWhere(
+      (stream) => stream.index == subtitleStreamIndex,
+      orElse: () => JellyfinMediaStreamInfo(index: subtitleStreamIndex),
+    );
+    final codec = subtitleStream.codec?.toLowerCase();
+    if (codec != 'ass' && codec != 'ssa') {
+      return null;
+    }
+
+    return _mediaApi.buildSubtitleStreamUrl(
+      itemId: itemId,
+      mediaSource: mediaSource,
+      subtitleStream: subtitleStream,
+      format: 'ass',
+    );
   }
 }

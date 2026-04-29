@@ -86,6 +86,26 @@ class JellyfinLibraryApi extends JellyfinApiBase {
     return JellyfinBaseItemQueryResult.fromJson(response.data ?? {});
   }
 
+  Future<JellyfinBaseItemQueryResult> getUserViews({
+    required String userId,
+    List<String>? fields,
+    List<String>? enableImageTypes,
+    bool enableUserData = true,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await client.get<Map<String, dynamic>>(
+      '/Users/$userId/Views',
+      queryParameters: {
+        'Fields': _csv(fields),
+        'EnableImageTypes': _csv(enableImageTypes),
+        'EnableUserData': enableUserData,
+      },
+      options: jellyfinOptions(),
+      cancelToken: cancelToken,
+    );
+    return JellyfinBaseItemQueryResult.fromJson(response.data ?? {});
+  }
+
   Future<JellyfinBaseItem?> getItemById({
     required String itemId,
     String? userId,

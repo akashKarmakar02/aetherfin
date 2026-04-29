@@ -47,6 +47,7 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
     bool autoplay = true,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
+    String? externalSubtitleUrl,
   }) async {
     final previous = _controller;
     final next = VideoPlayerController.networkUrl(uri);
@@ -58,6 +59,7 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
         next,
         audioStreamIndex: audioStreamIndex,
         subtitleStreamIndex: subtitleStreamIndex,
+        externalSubtitleUrl: externalSubtitleUrl,
       );
       if (startPosition > Duration.zero) {
         await next.seekTo(startPosition);
@@ -150,6 +152,7 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
     VideoPlayerController controller, {
     required int? audioStreamIndex,
     required int? subtitleStreamIndex,
+    required String? externalSubtitleUrl,
   }) async {
     if (currentAppPlatform != AppPlatform.linux) {
       return;
@@ -192,6 +195,17 @@ class VideoPlayerPlaybackAdapter extends PlayerPlaybackAdapter {
       controller.setSubtitleTracks(const <int>[]);
       if (kDebugMode) {
         debugPrint('Linux fvp applied subtitle tracks: []');
+      }
+      return;
+    }
+
+    if (externalSubtitleUrl != null && externalSubtitleUrl.isNotEmpty) {
+      controller.setExternalSubtitle(externalSubtitleUrl);
+      if (kDebugMode) {
+        debugPrint(
+          'Linux fvp attached external subtitle fallback'
+          ' [requested=$subtitleStreamIndex]: $externalSubtitleUrl',
+        );
       }
       return;
     }

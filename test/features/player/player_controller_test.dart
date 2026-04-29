@@ -176,6 +176,9 @@ class _FakePlaybackAdapter extends PlayerPlaybackAdapter {
     Uri uri, {
     Duration startPosition = Duration.zero,
     bool autoplay = true,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+    String? externalSubtitleUrl,
   }) async {
     openedUris.add(uri);
     lastStartPosition = startPosition;

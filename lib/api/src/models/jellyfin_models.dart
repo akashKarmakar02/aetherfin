@@ -310,6 +310,7 @@ class JellyfinBaseItem {
   JellyfinBaseItem({
     this.id,
     this.type,
+    this.collectionType,
     this.name,
     this.channelId,
     this.parentId,
@@ -343,6 +344,7 @@ class JellyfinBaseItem {
 
   final String? id;
   final String? type;
+  final String? collectionType;
   final String? name;
   final String? channelId;
   final String? parentId;
@@ -392,6 +394,7 @@ class JellyfinBaseItem {
     return JellyfinBaseItem(
       id: _asString(json['Id']),
       type: _asString(json['Type']),
+      collectionType: _asString(json['CollectionType']),
       name: _asString(json['Name']),
       channelId: _asString(json['ChannelId']),
       parentId: _asString(json['ParentId']),

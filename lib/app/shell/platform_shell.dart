@@ -12,10 +12,12 @@ class LinuxWindowShell extends StatefulWidget {
     this.extendBodyBehindTitleBar = false,
     this.onBackPressed,
     this.isHomeSelected = false,
+    this.isLibrarySelected = false,
     this.isSearchSelected = false,
     this.isLoading = false,
     this.showTitlebarOption = false,
     this.onHomePressed,
+    this.onLibraryPressed,
     this.onSearchPressed,
     this.enableTray = true,
   });
@@ -25,10 +27,12 @@ class LinuxWindowShell extends StatefulWidget {
   final bool extendBodyBehindTitleBar;
   final VoidCallback? onBackPressed;
   final bool isHomeSelected;
+  final bool isLibrarySelected;
   final bool isSearchSelected;
   final bool showTitlebarOption;
   final bool isLoading;
   final VoidCallback? onHomePressed;
+  final VoidCallback? onLibraryPressed;
   final VoidCallback? onSearchPressed;
   final bool enableTray;
 
@@ -47,7 +51,7 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
   }
 
   Future<void> _initTray() async {
-    await trayManager.setIcon('web/favicon.png');
+    await trayManager.setIcon('assets/ic_launcher.png');
     await trayManager.setContextMenu(
       Menu(
         items: [
@@ -135,6 +139,12 @@ class _LinuxWindowShellState extends State<LinuxWindowShell> with TrayListener {
                   label: 'Home',
                   selected: widget.isHomeSelected,
                   onPressed: widget.onHomePressed,
+                ),
+                _LinuxTitleBarActionButton(
+                  icon: YaruIcons.app_grid,
+                  label: 'Library',
+                  selected: widget.isLibrarySelected,
+                  onPressed: widget.onLibraryPressed,
                 ),
                 _LinuxTitleBarActionButton(
                   icon: CupertinoIcons.search,
