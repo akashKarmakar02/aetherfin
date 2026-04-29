@@ -1,0 +1,61 @@
+id: com.vedastacklabs.aetherfin
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: aetherfin
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-config/dconf:ro
+  - --filesystem=xdg-run/dconf
+  - --talk-name=ca.desrt.dconf
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=com.canonical.AppMenu.Registrar
+modules:
+  - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
+  - name: aetherfin
+    buildsystem: simple
+    build-commands:
+      - install -d /app/aetherfin
+      - cp -a bundle/. /app/aetherfin/
+      - install -Dm755 aetherfin-flatpak /app/bin/aetherfin
+      - install -Dm644 com.vedastacklabs.aetherfin.desktop /app/share/applications/com.vedastacklabs.aetherfin.desktop
+      - install -Dm644 com.vedastacklabs.aetherfin.metainfo.xml /app/share/metainfo/com.vedastacklabs.aetherfin.metainfo.xml
+      - install -Dm644 icons/16x16/com.vedastacklabs.aetherfin.png /app/share/icons/hicolor/16x16/apps/com.vedastacklabs.aetherfin.png
+      - install -Dm644 icons/32x32/com.vedastacklabs.aetherfin.png /app/share/icons/hicolor/32x32/apps/com.vedastacklabs.aetherfin.png
+      - install -Dm644 icons/64x64/com.vedastacklabs.aetherfin.png /app/share/icons/hicolor/64x64/apps/com.vedastacklabs.aetherfin.png
+      - install -Dm644 icons/128x128/com.vedastacklabs.aetherfin.png /app/share/icons/hicolor/128x128/apps/com.vedastacklabs.aetherfin.png
+      - install -Dm644 icons/256x256/com.vedastacklabs.aetherfin.png /app/share/icons/hicolor/256x256/apps/com.vedastacklabs.aetherfin.png
+      - install -Dm644 icons/512x512/com.vedastacklabs.aetherfin.png /app/share/icons/hicolor/512x512/apps/com.vedastacklabs.aetherfin.png
+    sources:
+      - type: dir
+        path: build/linux/x64/release/bundle
+        dest: bundle
+      - type: file
+        path: flatpak/aetherfin-flatpak
+      - type: file
+        path: flatpak/com.vedastacklabs.aetherfin.desktop
+      - type: file
+        path: flatpak/com.vedastacklabs.aetherfin.metainfo.xml
+      - type: file
+        path: flatpak/icons/16x16/com.vedastacklabs.aetherfin.png
+        dest: icons/16x16
+      - type: file
+        path: flatpak/icons/32x32/com.vedastacklabs.aetherfin.png
+        dest: icons/32x32
+      - type: file
+        path: flatpak/icons/64x64/com.vedastacklabs.aetherfin.png
+        dest: icons/64x64
+      - type: file
+        path: flatpak/icons/128x128/com.vedastacklabs.aetherfin.png
+        dest: icons/128x128
+      - type: file
+        path: flatpak/icons/256x256/com.vedastacklabs.aetherfin.png
+        dest: icons/256x256
+      - type: file
+        path: flatpak/icons/512x512/com.vedastacklabs.aetherfin.png
+        dest: icons/512x512

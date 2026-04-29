@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.vedastacklabs.aetherfin</id>
+  <name>Aetherfin</name>
+  <summary>Stream media from Jellyfin</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="com.vedastacklabs">
+    <name>Veda Stack Labs</name>
+  </developer>
+  <launchable type="desktop-id">com.vedastacklabs.aetherfin.desktop</launchable>
+  <content_rating type="oars-1.1" />
+  <description>
+    <p>
+      Aetherfin is a Flutter desktop client for browsing and playing media from Jellyfin servers.
+    </p>
+  </description>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+  </categories>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/akashKarmakar02/aetherfin/v1.0.0/flatpak/screenshots/home.png</image>
+      <caption>Home media shelves</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/akashKarmakar02/aetherfin/v1.0.0/flatpak/screenshots/player.png</image>
+      <caption>Video player</caption>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.0.0" date="2026-04-21" />
+  </releases>
+  <url type="homepage">https://github.com/akashKarmakar02/aetherfin</url>
+  <url type="bugtracker">https://github.com/akashKarmakar02/aetherfin/issues</url>
+</component>

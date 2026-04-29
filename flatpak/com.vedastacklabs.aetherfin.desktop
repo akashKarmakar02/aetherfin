@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Aetherfin
+Comment=Stream media from Jellyfin
+Exec=aetherfin
+Icon=com.vedastacklabs.aetherfin
+Categories=AudioVideo;Video;Player;
+Keywords=Jellyfin;media;streaming;video;
+StartupNotify=true
