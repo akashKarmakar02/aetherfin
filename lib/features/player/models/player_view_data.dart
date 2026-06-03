@@ -11,6 +11,8 @@ class PlayerViewData {
     required this.startPositionTicks,
     required this.selectedAudioStreamIndex,
     required this.selectedSubtitleStreamIndex,
+    this.introSegments = const [],
+    this.creditSegments = const [],
   });
 
   final String requestedItemId;
@@ -22,11 +24,15 @@ class PlayerViewData {
   final int startPositionTicks;
   final int selectedAudioStreamIndex;
   final int selectedSubtitleStreamIndex;
+  final List<JellyfinMediaTimeSegment> introSegments;
+  final List<JellyfinMediaTimeSegment> creditSegments;
 
   List<JellyfinMediaStreamInfo> get audioStreams => mediaSource.audioStreams;
-  List<JellyfinMediaStreamInfo> get subtitleStreams => mediaSource.subtitleStreams;
+  List<JellyfinMediaStreamInfo> get subtitleStreams =>
+      mediaSource.subtitleStreams;
 
-  String get playMethod => mediaSource.isTranscoding ? 'Transcode' : 'DirectPlay';
+  String get playMethod =>
+      mediaSource.isTranscoding ? 'Transcode' : 'DirectPlay';
 
   PlayerViewData copyWith({
     String? streamUrl,
@@ -36,6 +42,8 @@ class PlayerViewData {
     int? startPositionTicks,
     int? selectedAudioStreamIndex,
     int? selectedSubtitleStreamIndex,
+    List<JellyfinMediaTimeSegment>? introSegments,
+    List<JellyfinMediaTimeSegment>? creditSegments,
   }) {
     return PlayerViewData(
       requestedItemId: requestedItemId,
@@ -49,6 +57,8 @@ class PlayerViewData {
           selectedAudioStreamIndex ?? this.selectedAudioStreamIndex,
       selectedSubtitleStreamIndex:
           selectedSubtitleStreamIndex ?? this.selectedSubtitleStreamIndex,
+      introSegments: introSegments ?? this.introSegments,
+      creditSegments: creditSegments ?? this.creditSegments,
     );
   }
 }

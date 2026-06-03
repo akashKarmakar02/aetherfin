@@ -48,13 +48,11 @@ abstract class JellyfinApiBase {
     ResponseType? responseType,
   }) {
     return Options(
-      headers: {
-        'Authorization': buildAuthorizationHeader(token),
-        if (headers != null) ...headers,
-      },
+      headers: {'Authorization': buildAuthorizationHeader(token), ...?headers},
       responseType: responseType,
     );
   }
 
-  String buildUrl(String path) => '${client.baseUrl}${client.resolvePath(path)}';
+  String buildUrl(String path) =>
+      '${client.baseUrl}${client.resolvePath(path)}';
 }

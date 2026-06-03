@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../api/api.dart';
 import '../../../app/platform/app_platform.dart';
@@ -56,6 +57,7 @@ class PlayerLoader implements PlayerDataSource {
     final playableItem = await _resolvePlayableItem(itemId);
     final startPositionTicks =
         playableItem.userData?.playbackPositionTicks ?? 0;
+    final segments = await _loadSegments(playableItem.id);
 
     return _loadStream(
       requestedItemId: itemId,
@@ -64,6 +66,7 @@ class PlayerLoader implements PlayerDataSource {
       audioStreamIndex: null,
       subtitleStreamIndex: null,
       mediaSourceId: null,
+      segments: segments,
     );
   }
 
@@ -81,6 +84,10 @@ class PlayerLoader implements PlayerDataSource {
       audioStreamIndex: audioStreamIndex,
       subtitleStreamIndex: subtitleStreamIndex,
       mediaSourceId: current.mediaSource.id,
+      segments: JellyfinMediaSegments(
+        introSegments: current.introSegments,
+        creditSegments: current.creditSegments,
+      ),
     );
   }
 
@@ -106,6 +113,7 @@ class PlayerLoader implements PlayerDataSource {
     required int? audioStreamIndex,
     required int? subtitleStreamIndex,
     required String? mediaSourceId,
+    required JellyfinMediaSegments segments,
   }) async {
     final requestedAudioStreamIndex = audioStreamIndex ?? 0;
     final requestedSubtitleStreamIndex = subtitleStreamIndex;
@@ -166,7 +174,44 @@ class PlayerLoader implements PlayerDataSource {
       startPositionTicks: startPositionTicks,
       selectedAudioStreamIndex: resolvedAudioIndex,
       selectedSubtitleStreamIndex: resolvedSubtitleIndex,
+      introSegments: segments.introSegments,
+      creditSegments: segments.creditSegments,
     );
+  }
+
+  Future<JellyfinMediaSegments> _loadSegments(String? itemId) async {
+    if (itemId == null || itemId.isEmpty) {
+      return JellyfinMediaSegments();
+    }
+
+    try {
+      final segments = await _mediaApi.fetchSegmentsWithFallback(itemId);
+      if (kDebugMode) {
+        debugPrint(
+          'Player segments for $itemId: '
+          'intro=${_describeSegments(segments.introSegments)}, '
+          'credits=${_describeSegments(segments.creditSegments)}',
+        );
+      }
+      return segments;
+    } catch (_) {
+      if (kDebugMode) {
+        debugPrint('Player segments for $itemId: unavailable');
+      }
+      return JellyfinMediaSegments();
+    }
+  }
+
+  String _describeSegments(List<JellyfinMediaTimeSegment> segments) {
+    if (segments.isEmpty) {
+      return '0';
+    }
+    return segments
+        .map(
+          (segment) =>
+              '${segment.startTime.toStringAsFixed(1)}-${segment.endTime.toStringAsFixed(1)}',
+        )
+        .join(',');
   }
 
   Future<JellyfinBaseItem> _resolvePlayableItem(String itemId) async {

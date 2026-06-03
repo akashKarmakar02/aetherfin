@@ -16,28 +16,41 @@ const _clientInfo = JellyfinClientInfo(
 
 void main() {
   group('PlayerLoader', () {
-    test('loads playback data using Jellyfin defaults and resume position', () async {
-      final adapter = FakeHttpClientAdapter();
-      final dio = Dio()..httpClientAdapter = adapter;
-      adapter.onGet('/Users/user-1/Items/episode-1', (_) {
-        return jsonResponse(
-          const <String, dynamic>{
+    test(
+      'loads playback data using Jellyfin defaults and resume position',
+      () async {
+        final adapter = FakeHttpClientAdapter();
+        final dio = Dio()..httpClientAdapter = adapter;
+        adapter.onGet('/Users/user-1/Items/episode-1', (_) {
+          return jsonResponse(const <String, dynamic>{
             'Id': 'episode-1',
             'Type': 'Episode',
             'Name': 'Episode 1',
-            'UserData': <String, dynamic>{
-              'PlaybackPositionTicks': 900000000,
-            },
-          },
-        );
-      });
-      adapter.onRequest(
-        (options) =>
-            options.method == 'POST' &&
-            options.path == '/Items/episode-1/PlaybackInfo',
-        (_) {
-          return jsonResponse(
-            const <String, dynamic>{
+            'UserData': <String, dynamic>{'PlaybackPositionTicks': 900000000},
+          });
+        });
+        adapter.onGet('/MediaSegments/episode-1', (_) {
+          return jsonResponse(const <String, dynamic>{
+            'Items': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'Type': 'Intro',
+                'StartTicks': 100000000,
+                'EndTicks': 200000000,
+              },
+              <String, dynamic>{
+                'Type': 'Outro',
+                'StartTicks': 300000000,
+                'EndTicks': 400000000,
+              },
+            ],
+          });
+        });
+        adapter.onRequest(
+          (options) =>
+              options.method == 'POST' &&
+              options.path == '/Items/episode-1/PlaybackInfo',
+          (_) {
+            return jsonResponse(const <String, dynamic>{
               'PlaySessionId': 'play-episode-1',
               'MediaSources': <Map<String, dynamic>>[
                 <String, dynamic>{
@@ -59,27 +72,31 @@ void main() {
                   ],
                 },
               ],
-            },
-          );
-        },
-      );
+            });
+          },
+        );
 
-      final loader = PlayerLoader(
-        baseUrl: 'https://jellyfin.local',
-        accessToken: 'token',
-        clientInfo: _clientInfo,
-        userId: 'user-1',
-        dio: dio,
-      );
-      final data = await loader.load('episode-1');
+        final loader = PlayerLoader(
+          baseUrl: 'https://jellyfin.local',
+          accessToken: 'token',
+          clientInfo: _clientInfo,
+          userId: 'user-1',
+          dio: dio,
+        );
+        final data = await loader.load('episode-1');
 
-      expect(data.item.id, 'episode-1');
-      expect(data.startPositionTicks, 900000000);
-      expect(data.selectedAudioStreamIndex, 3);
-      expect(data.selectedSubtitleStreamIndex, -1);
-      expect(data.playSessionId, 'play-episode-1');
-      expect(data.streamUrl, contains('/Videos/episode-1/stream'));
-    });
+        expect(data.item.id, 'episode-1');
+        expect(data.startPositionTicks, 900000000);
+        expect(data.selectedAudioStreamIndex, 3);
+        expect(data.selectedSubtitleStreamIndex, -1);
+        expect(data.playSessionId, 'play-episode-1');
+        expect(data.streamUrl, contains('/Videos/episode-1/stream'));
+        expect(data.introSegments.single.startTime, 10);
+        expect(data.introSegments.single.endTime, 20);
+        expect(data.creditSegments.single.startTime, 30);
+        expect(data.creditSegments.single.endTime, 40);
+      },
+    );
 
     test('reloads stream with explicit audio and subtitle indices', () async {
       final adapter = FakeHttpClientAdapter();
@@ -89,21 +106,19 @@ void main() {
             options.method == 'POST' &&
             options.path == '/Items/episode-2/PlaybackInfo',
         (_) {
-          return jsonResponse(
-            const <String, dynamic>{
-              'PlaySessionId': 'play-episode-2',
-              'MediaSources': <Map<String, dynamic>>[
-                <String, dynamic>{
-                  'Id': 'source-2',
-                  'Container': 'mkv',
-                  'MediaStreams': <Map<String, dynamic>>[
-                    <String, dynamic>{'Index': 1, 'Type': 'Audio'},
-                    <String, dynamic>{'Index': 5, 'Type': 'Subtitle'},
-                  ],
-                },
-              ],
-            },
-          );
+          return jsonResponse(const <String, dynamic>{
+            'PlaySessionId': 'play-episode-2',
+            'MediaSources': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'Id': 'source-2',
+                'Container': 'mkv',
+                'MediaStreams': <Map<String, dynamic>>[
+                  <String, dynamic>{'Index': 1, 'Type': 'Audio'},
+                  <String, dynamic>{'Index': 5, 'Type': 'Subtitle'},
+                ],
+              },
+            ],
+          });
         },
       );
 
@@ -123,6 +138,12 @@ void main() {
         startPositionTicks: 0,
         selectedAudioStreamIndex: 0,
         selectedSubtitleStreamIndex: -1,
+        introSegments: [
+          JellyfinMediaTimeSegment(startTime: 8, endTime: 16, text: 'Intro'),
+        ],
+        creditSegments: [
+          JellyfinMediaTimeSegment(startTime: 50, endTime: 58, text: 'Credits'),
+        ],
       );
 
       final data = await loader.reloadStream(
@@ -138,6 +159,8 @@ void main() {
       expect(data.streamUrl, contains('audioStreamIndex=1'));
       expect(data.streamUrl, contains('subtitleStreamIndex=-1'));
       expect(data.streamUrl, contains('startTimeTicks=120000000'));
+      expect(data.introSegments.single.startTime, 8);
+      expect(data.creditSegments.single.endTime, 58);
     });
 
     test('builds linux external ass subtitle fallback for ass tracks', () async {
@@ -151,25 +174,23 @@ void main() {
             options.method == 'POST' &&
             options.path == '/Items/episode-3/PlaybackInfo',
         (_) {
-          return jsonResponse(
-            const <String, dynamic>{
-              'PlaySessionId': 'play-episode-3',
-              'MediaSources': <Map<String, dynamic>>[
-                <String, dynamic>{
-                  'Id': 'source-3',
-                  'Container': 'mkv',
-                  'MediaStreams': <Map<String, dynamic>>[
-                    <String, dynamic>{'Index': 1, 'Type': 'Audio'},
-                    <String, dynamic>{
-                      'Index': 6,
-                      'Type': 'Subtitle',
-                      'Codec': 'ass',
-                    },
-                  ],
-                },
-              ],
-            },
-          );
+          return jsonResponse(const <String, dynamic>{
+            'PlaySessionId': 'play-episode-3',
+            'MediaSources': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'Id': 'source-3',
+                'Container': 'mkv',
+                'MediaStreams': <Map<String, dynamic>>[
+                  <String, dynamic>{'Index': 1, 'Type': 'Audio'},
+                  <String, dynamic>{
+                    'Index': 6,
+                    'Type': 'Subtitle',
+                    'Codec': 'ass',
+                  },
+                ],
+              },
+            ],
+          });
         },
       );
 
@@ -203,6 +224,5 @@ void main() {
         'https://jellyfin.local/Videos/episode-3/source-3/Subtitles/6/Stream.ass?api_key=token',
       );
     });
-
   });
 }

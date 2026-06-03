@@ -65,9 +65,7 @@ class JellyfinMediaApi extends JellyfinApiBase {
     try {
       final response = await client.get<Map<String, dynamic>>(
         '/MediaSegments/$itemId',
-        queryParameters: {
-          'includeSegmentTypes': 'Intro,Outro',
-        },
+        queryParameters: {'includeSegmentTypes': 'Intro,Outro'},
         options: jellyfinOptions(),
       );
 
@@ -124,6 +122,18 @@ class JellyfinMediaApi extends JellyfinApiBase {
         '/Episode/$itemId/Timestamps',
         options: jellyfinOptions(),
       );
+      final introduction = creditsResponse.data?['Introduction'];
+      if (introSegments.isEmpty &&
+          introduction is Map &&
+          introduction['Valid'] == true) {
+        introSegments.add(
+          JellyfinMediaTimeSegment(
+            startTime: _toDouble(introduction['Start']) ?? 0,
+            endTime: _toDouble(introduction['End']) ?? 0,
+            text: 'Intro',
+          ),
+        );
+      }
       final credits = creditsResponse.data?['Credits'];
       if (credits is Map && credits['Valid'] == true) {
         creditSegments.add(
@@ -144,7 +154,20 @@ class JellyfinMediaApi extends JellyfinApiBase {
 
   Future<JellyfinMediaSegments> fetchSegmentsWithFallback(String itemId) async {
     final current = await fetchMediaSegments(itemId);
-    return current ?? fetchLegacySegments(itemId);
+    if (current == null ||
+        current.introSegments.isEmpty ||
+        current.creditSegments.isEmpty) {
+      final legacy = await fetchLegacySegments(itemId);
+      return JellyfinMediaSegments(
+        introSegments: current?.introSegments.isNotEmpty == true
+            ? current!.introSegments
+            : legacy.introSegments,
+        creditSegments: current?.creditSegments.isNotEmpty == true
+            ? current!.creditSegments
+            : legacy.creditSegments,
+      );
+    }
+    return current;
   }
 
   Future<JellyfinMediaBarContent> fetchMediaBarContent({
@@ -239,9 +262,7 @@ class JellyfinMediaApi extends JellyfinApiBase {
         items: items,
       );
     } catch (_) {
-      return JellyfinMediaBarContent(
-        source: JellyfinMediaBarSource.none,
-      );
+      return JellyfinMediaBarContent(source: JellyfinMediaBarSource.none);
     }
   }
 
@@ -368,8 +389,9 @@ class JellyfinMediaApi extends JellyfinApiBase {
           'autoOpenLiveStream': true,
         },
       );
-      final mediaSource =
-          playbackInfo.mediaSources.isNotEmpty ? playbackInfo.mediaSources.first : null;
+      final mediaSource = playbackInfo.mediaSources.isNotEmpty
+          ? playbackInfo.mediaSources.first
+          : null;
       if (mediaSource?.transcodingUrl != null) {
         return JellyfinAudioStreamResult(
           url: '${client.baseUrl}${mediaSource!.transcodingUrl}',
@@ -379,14 +401,16 @@ class JellyfinMediaApi extends JellyfinApiBase {
         );
       }
 
-      final params = Uri(queryParameters: {
-        'static': 'true',
-        'container': mediaSource?.container ?? 'mp3',
-        'mediaSourceId': mediaSource?.id ?? '',
-        'deviceId': clientInfo.deviceId,
-        'api_key': accessToken ?? '',
-        'userId': userId,
-      }).query;
+      final params = Uri(
+        queryParameters: {
+          'static': 'true',
+          'container': mediaSource?.container ?? 'mp3',
+          'mediaSourceId': mediaSource?.id ?? '',
+          'deviceId': clientInfo.deviceId,
+          'api_key': accessToken ?? '',
+          'userId': userId,
+        },
+      ).query;
 
       return JellyfinAudioStreamResult(
         url: '${client.baseUrl}/Audio/$itemId/stream?$params',
@@ -412,7 +436,9 @@ class JellyfinMediaApi extends JellyfinApiBase {
     String? deviceId,
   }) async {
     if (item.id == null) return null;
-    final playbackItemId = item.type == 'Program' ? item.channelId ?? item.id! : item.id!;
+    final playbackItemId = item.type == 'Program'
+        ? item.channelId ?? item.id!
+        : item.id!;
 
     final playbackInfo = await getPlaybackInfo(
       itemId: playbackItemId,
@@ -515,9 +541,11 @@ class JellyfinMediaApi extends JellyfinApiBase {
       deviceId: deviceId,
     );
 
-    if (maxBitrate == null && streamDetails?.mediaSource?.transcodingUrl == null) {
+    if (maxBitrate == null &&
+        streamDetails?.mediaSource?.transcodingUrl == null) {
       return JellyfinDownloadUrlResult(
-        url: '${client.baseUrl}/Items/${item.id}/Download?api_key=${accessToken ?? ''}',
+        url:
+            '${client.baseUrl}/Items/${item.id}/Download?api_key=${accessToken ?? ''}',
         mediaSource: streamDetails?.mediaSource,
       );
     }
@@ -649,7 +677,9 @@ class JellyfinMediaApi extends JellyfinApiBase {
   }) {
     final subtitleIndex = subtitleStream.index;
     final mediaSourceId = mediaSource.id;
-    if (subtitleIndex == null || mediaSourceId == null || mediaSourceId.isEmpty) {
+    if (subtitleIndex == null ||
+        mediaSourceId == null ||
+        mediaSourceId.isEmpty) {
       return null;
     }
 

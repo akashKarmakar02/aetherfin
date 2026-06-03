@@ -8,11 +8,109 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PlayerController', () {
-    test('initial load opens the stream at the Jellyfin resume position', () async {
+    test(
+      'initial load opens the stream at the Jellyfin resume position',
+      () async {
+        final loader = _FakePlayerDataSource(
+          loadResult: _viewData(
+            streamUrl: 'https://example.com/stream-1.m3u8',
+            startPositionTicks: 450000000,
+          ),
+        );
+        final playback = _FakePlaybackAdapter();
+        final controller = PlayerController(
+          itemId: 'episode-1',
+          loader: loader,
+          playbackAdapter: playback,
+        );
+
+        await controller.initialize();
+
+        expect(playback.openedUris, [
+          Uri.parse('https://example.com/stream-1.m3u8'),
+        ]);
+        expect(playback.lastStartPosition, const Duration(seconds: 45));
+        expect(playback.isPlaying, isTrue);
+        expect(loader.startedReports, hasLength(1));
+        await controller.close();
+      },
+    );
+
+    test(
+      'audio switching reloads the stream and preserves playback position',
+      () async {
+        final initial = _viewData(
+          streamUrl: 'https://example.com/stream-1.m3u8',
+          selectedAudioStreamIndex: 0,
+        );
+        final reloaded = _viewData(
+          streamUrl: 'https://example.com/stream-2.m3u8',
+          selectedAudioStreamIndex: 2,
+          selectedSubtitleStreamIndex: -1,
+        );
+        final loader = _FakePlayerDataSource(
+          loadResult: initial,
+          reloadResult: reloaded,
+        );
+        final playback = _FakePlaybackAdapter();
+        final controller = PlayerController(
+          itemId: 'episode-1',
+          loader: loader,
+          playbackAdapter: playback,
+        );
+        await controller.initialize();
+
+        playback.setPosition(const Duration(minutes: 3, seconds: 12));
+        await controller.selectAudioStream(2);
+
+        expect(loader.lastReloadAudioStreamIndex, 2);
+        expect(loader.lastReloadStartPositionTicks, 1920000000);
+        expect(
+          playback.openedUris.last,
+          Uri.parse('https://example.com/stream-2.m3u8'),
+        );
+        expect(
+          playback.lastStartPosition,
+          const Duration(minutes: 3, seconds: 12),
+        );
+        expect(controller.viewData?.selectedAudioStreamIndex, 2);
+        await controller.close();
+      },
+    );
+
+    test(
+      'subtitle switch failures keep current playback and surface a message',
+      () async {
+        final loader = _FakePlayerDataSource(
+          loadResult: _viewData(streamUrl: 'https://example.com/stream-1.m3u8'),
+          reloadError: StateError('switch failed'),
+        );
+        final playback = _FakePlaybackAdapter();
+        final controller = PlayerController(
+          itemId: 'episode-1',
+          loader: loader,
+          playbackAdapter: playback,
+        );
+        await controller.initialize();
+
+        await controller.selectSubtitleStream(8);
+
+        expect(
+          controller.message,
+          'Could not switch streams. Playback kept the previous selection.',
+        );
+        expect(playback.openedUris, hasLength(1));
+        await controller.close();
+      },
+    );
+
+    test('shows and skips an active intro segment', () async {
       final loader = _FakePlayerDataSource(
         loadResult: _viewData(
           streamUrl: 'https://example.com/stream-1.m3u8',
-          startPositionTicks: 450000000,
+          introSegments: [
+            JellyfinMediaTimeSegment(startTime: 10, endTime: 20, text: 'Intro'),
+          ],
         ),
       );
       final playback = _FakePlaybackAdapter();
@@ -21,29 +119,34 @@ void main() {
         loader: loader,
         playbackAdapter: playback,
       );
-
       await controller.initialize();
 
-      expect(playback.openedUris, [Uri.parse('https://example.com/stream-1.m3u8')]);
-      expect(playback.lastStartPosition, const Duration(seconds: 45));
-      expect(playback.isPlaying, isTrue);
-      expect(loader.startedReports, hasLength(1));
+      expect(controller.hasActiveSkipPrompt, isFalse);
+
+      playback.setPosition(const Duration(seconds: 12));
+
+      expect(controller.activeSkipLabel, 'Skip Intro');
+
+      await controller.skipActiveSegment();
+
+      expect(playback.position, const Duration(seconds: 20));
+      expect(loader.progressReports, isNotEmpty);
+      expect(loader.progressReports.last.positionTicks, 200000000);
       await controller.close();
     });
 
-    test('audio switching reloads the stream and preserves playback position', () async {
-      final initial = _viewData(
-        streamUrl: 'https://example.com/stream-1.m3u8',
-        selectedAudioStreamIndex: 0,
-      );
-      final reloaded = _viewData(
-        streamUrl: 'https://example.com/stream-2.m3u8',
-        selectedAudioStreamIndex: 2,
-        selectedSubtitleStreamIndex: -1,
-      );
+    test('shows and skips an active credit segment', () async {
       final loader = _FakePlayerDataSource(
-        loadResult: initial,
-        reloadResult: reloaded,
+        loadResult: _viewData(
+          streamUrl: 'https://example.com/stream-1.m3u8',
+          creditSegments: [
+            JellyfinMediaTimeSegment(
+              startTime: 50,
+              endTime: 60,
+              text: 'Credits',
+            ),
+          ],
+        ),
       );
       final playback = _FakePlaybackAdapter();
       final controller = PlayerController(
@@ -53,37 +156,13 @@ void main() {
       );
       await controller.initialize();
 
-      playback.setPosition(const Duration(minutes: 3, seconds: 12));
-      await controller.selectAudioStream(2);
+      playback.setPosition(const Duration(seconds: 55));
 
-      expect(loader.lastReloadAudioStreamIndex, 2);
-      expect(loader.lastReloadStartPositionTicks, 1920000000);
-      expect(playback.openedUris.last, Uri.parse('https://example.com/stream-2.m3u8'));
-      expect(playback.lastStartPosition, const Duration(minutes: 3, seconds: 12));
-      expect(controller.viewData?.selectedAudioStreamIndex, 2);
-      await controller.close();
-    });
+      expect(controller.activeSkipLabel, 'Skip Credits');
 
-    test('subtitle switch failures keep current playback and surface a message', () async {
-      final loader = _FakePlayerDataSource(
-        loadResult: _viewData(streamUrl: 'https://example.com/stream-1.m3u8'),
-        reloadError: StateError('switch failed'),
-      );
-      final playback = _FakePlaybackAdapter();
-      final controller = PlayerController(
-        itemId: 'episode-1',
-        loader: loader,
-        playbackAdapter: playback,
-      );
-      await controller.initialize();
+      await controller.skipActiveSegment();
 
-      await controller.selectSubtitleStream(8);
-
-      expect(
-        controller.message,
-        'Could not switch streams. Playback kept the previous selection.',
-      );
-      expect(playback.openedUris, hasLength(1));
+      expect(playback.position, const Duration(seconds: 60));
       await controller.close();
     });
   });
@@ -227,6 +306,8 @@ PlayerViewData _viewData({
   int startPositionTicks = 0,
   int selectedAudioStreamIndex = 0,
   int selectedSubtitleStreamIndex = -1,
+  List<JellyfinMediaTimeSegment> introSegments = const [],
+  List<JellyfinMediaTimeSegment> creditSegments = const [],
 }) {
   return PlayerViewData(
     requestedItemId: 'episode-1',
@@ -235,14 +316,8 @@ PlayerViewData _viewData({
     mediaSource: JellyfinMediaSourceInfo(
       id: 'source-1',
       mediaStreams: [
-        JellyfinMediaStreamInfo(
-          index: 0,
-          type: JellyfinMediaStreamType.audio,
-        ),
-        JellyfinMediaStreamInfo(
-          index: 2,
-          type: JellyfinMediaStreamType.audio,
-        ),
+        JellyfinMediaStreamInfo(index: 0, type: JellyfinMediaStreamType.audio),
+        JellyfinMediaStreamInfo(index: 2, type: JellyfinMediaStreamType.audio),
         JellyfinMediaStreamInfo(
           index: 8,
           type: JellyfinMediaStreamType.subtitle,
@@ -253,5 +328,7 @@ PlayerViewData _viewData({
     startPositionTicks: startPositionTicks,
     selectedAudioStreamIndex: selectedAudioStreamIndex,
     selectedSubtitleStreamIndex: selectedSubtitleStreamIndex,
+    introSegments: introSegments,
+    creditSegments: creditSegments,
   );
 }

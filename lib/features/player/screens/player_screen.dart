@@ -192,6 +192,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                   ),
                           ),
                         ),
+                        _PlayerSkipPromptOverlay(controller: controller),
                         AnimatedSwitcher(
                           duration: _overlayFadeDuration,
                           switchInCurve: Curves.easeOutCubic,
@@ -361,6 +362,79 @@ class _PlayerScreenState extends State<PlayerScreen> {
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
+}
+
+class _PlayerSkipPromptOverlay extends StatelessWidget {
+  const _PlayerSkipPromptOverlay({required this.controller});
+
+  final PlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final prompt = controller.activeSkipPrompt;
+    final bottom = MediaQuery.viewPaddingOf(context).bottom + 96;
+    final borderRadius = BorderRadius.circular(999);
+
+    return Positioned(
+      right: 28,
+      bottom: bottom,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: prompt == null
+            ? const SizedBox.shrink(key: ValueKey('empty-skip-prompt'))
+            : Material(
+                key: ValueKey('${prompt.kind}-${prompt.segment.startTime}'),
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: borderRadius,
+                  hoverColor: Colors.white.withValues(alpha: 0.08),
+                  splashColor: Colors.white.withValues(alpha: 0.10),
+                  highlightColor: Colors.white.withValues(alpha: 0.06),
+                  onTap: controller.skipActiveSegment,
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D1D1F).withValues(alpha: 0.78),
+                      borderRadius: borderRadius,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.34),
+                          blurRadius: 18,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsetsDirectional.fromSTEB(14, 9, 16, 9),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.skip_next_rounded,
+                          size: 18,
+                          color: Colors.white.withValues(alpha: 0.96),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          prompt.label,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.96),
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
 }
 
 class _PlayerControlsOverlay extends StatelessWidget {

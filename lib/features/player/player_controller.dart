@@ -47,6 +47,9 @@ class PlayerController extends ChangeNotifier {
   Duration get position => _position;
   Duration get duration => _duration;
   PlayerPlaybackAdapter get playbackAdapter => _playbackAdapter;
+  PlayerSkipPrompt? get activeSkipPrompt => _activeSkipPromptFor(_position);
+  bool get hasActiveSkipPrompt => activeSkipPrompt != null;
+  String? get activeSkipLabel => activeSkipPrompt?.label;
 
   Future<void> initialize() async {
     await _load();
@@ -90,6 +93,30 @@ class PlayerController extends ChangeNotifier {
     _lastUiNotifiedPosition = nextPosition;
     notifyListeners();
     await _reportProgress();
+  }
+
+  Future<void> skipActiveSegment() async {
+    final prompt = activeSkipPrompt;
+    if (prompt == null) {
+      return;
+    }
+
+    var target = _durationFromSeconds(prompt.segment.endTime);
+    if (prompt.kind == PlayerSkipPromptKind.credits &&
+        _duration > Duration.zero &&
+        target >= _duration) {
+      target = _duration - const Duration(seconds: 2);
+    }
+    if (target < Duration.zero) {
+      target = Duration.zero;
+    }
+
+    await seek(target);
+    if (!_isPlaying) {
+      await _playbackAdapter.play();
+      await _reportProgress(isPaused: false);
+    }
+    revealControls();
   }
 
   Future<void> selectAudioStream(int audioStreamIndex) async {
@@ -229,9 +256,11 @@ class PlayerController extends ChangeNotifier {
     final previousDuration = _duration;
     final previousPosition = _position;
     final previousMessage = _message;
+    final previousSkipPrompt = _activeSkipPromptFor(previousPosition);
     _isPlaying = _playbackAdapter.isPlaying;
     _position = _playbackAdapter.position;
     _duration = _playbackAdapter.duration;
+    final nextSkipPrompt = _activeSkipPromptFor(_position);
 
     if (_playbackAdapter.hasError) {
       _message =
@@ -257,6 +286,7 @@ class PlayerController extends ChangeNotifier {
     if (_isPlaying != wasPlaying ||
         _duration != previousDuration ||
         _message != previousMessage ||
+        !_isSameSkipPrompt(previousSkipPrompt, nextSkipPrompt) ||
         shouldNotifyForPosition) {
       notifyListeners();
     }
@@ -337,4 +367,68 @@ class PlayerController extends ChangeNotifier {
   Duration _durationFromTicks(int ticks) {
     return Duration(microseconds: ticks ~/ 10);
   }
+
+  Duration _durationFromSeconds(double seconds) {
+    return Duration(
+      microseconds: (seconds * Duration.microsecondsPerSecond).round(),
+    );
+  }
+
+  PlayerSkipPrompt? _activeSkipPromptFor(Duration position) {
+    final data = _viewData;
+    if (data == null) {
+      return null;
+    }
+
+    for (final segment in data.introSegments) {
+      if (_isPositionInSegment(position, segment)) {
+        return PlayerSkipPrompt(
+          kind: PlayerSkipPromptKind.intro,
+          label: 'Skip Intro',
+          segment: segment,
+        );
+      }
+    }
+
+    for (final segment in data.creditSegments) {
+      if (_isPositionInSegment(position, segment)) {
+        return PlayerSkipPrompt(
+          kind: PlayerSkipPromptKind.credits,
+          label: 'Skip Credits',
+          segment: segment,
+        );
+      }
+    }
+
+    return null;
+  }
+
+  bool _isPositionInSegment(
+    Duration position,
+    JellyfinMediaTimeSegment segment,
+  ) {
+    final start = _durationFromSeconds(segment.startTime);
+    final end = _durationFromSeconds(segment.endTime);
+    return position > start && position < end;
+  }
+
+  bool _isSameSkipPrompt(PlayerSkipPrompt? a, PlayerSkipPrompt? b) {
+    return a?.kind == b?.kind &&
+        a?.segment.startTime == b?.segment.startTime &&
+        a?.segment.endTime == b?.segment.endTime;
+  }
+}
+
+enum PlayerSkipPromptKind { intro, credits }
+
+class PlayerSkipPrompt {
+  const PlayerSkipPrompt({
+    required this.kind,
+    required this.label,
+    required this.segment,
+  });
+
+  final PlayerSkipPromptKind kind;
+  final String label;
+  final JellyfinMediaTimeSegment segment;
 }
